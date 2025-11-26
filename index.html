@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>教學問答計時工具</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+<style>
+:root {
+--earth-beige: #f9f6f1;
+--clay-brown: #8a7663;
+--stone-gray: #82827a;
+--moss-green: #5f6e55;
+--charcoal: #383833;
+--shadow: #2a2a25;
+--text-primary: #333330;
+--text-secondary: #686863;
+--paper: #fdfcf8;
+--border-radius: 16px;
+--box-shadow: 0 8px 30px rgba(0, 0, 0, 0.07);
+--transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+--transition-fast: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+--primary-gradient: linear-gradient(135deg, var(--clay-brown), var(--charcoal));
+--secondary-gradient: linear-gradient(135deg, var(--moss-green), #535f4c);
+}
+
+* {
+  transition: var(--transition-fast);
+}
+
+body {
+  font-family: 'Noto Serif TC', serif;
+  background: var(--earth-beige);
+  color: var(--text-primary);
+  min-height: 100vh;
+  background-attachment: fixed;
+  line-height: 1.6;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: none;
+  z-index: -2;
+}
+
+.wabi-sabi-card {
+  background: var(--paper);
+  border: 1px solid rgba(141, 123, 104, 0.15);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.wabi-sabi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--moss-green), var(--clay-brown));
+  opacity: 0.85;
+}
+
+.wabi-sabi-button {
+  background: var(--earth-beige);
+  color: var(--charcoal);
+  border: 1px solid rgba(141, 123, 104, 0.3);
+  border-radius: var(--border-radius);
+  padding: 13px 26px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: var(--transition);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.wabi-sabi-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.2);
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  z-index: 0;
+}
+
+.wabi-sabi-button:hover::before {
+  transform: translateY(0);
+}
+
+.wabi-sabi-button span {
+  position: relative;
+  z-index: 1;
+}
+
+.wabi-sabi-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.wabi-sabi-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.wabi-sabi-button.primary {
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(138, 118, 99, 0.3);
+}
+
+.wabi-sabi-button.primary:hover {
+  box-shadow: 0 6px 18px rgba(138, 118, 99, 0.4);
+}
+
+.wabi-sabi-button.primary:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(138, 118, 99, 0.35);
+}
+
+.wabi-sabi-button.danger {
+  background: linear-gradient(135deg, #a86b6b, #8b5555);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(168, 107, 107, 0.3);
+}
+
+.wabi-sabi-button.danger:hover {
+  box-shadow: 0 6px 18px rgba(168, 107, 107, 0.4);
+}
+
+.input-field {
+  background-color: var(--earth-beige);
+  border: 1px solid rgba(126, 126, 118, 0.3);
+  color: var(--text-primary);
+  border-radius: 14px;
+  padding: 14px 18px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  transition: var(--transition);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--clay-brown);
+  box-shadow: 0 0 0 3px rgba(138, 118, 99, 0.2);
+  background-color: var(--earth-beige);
+}
+
+.input-field::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.qr-section {
+  background: var(--earth-beige);
+  border: 2px solid rgba(126, 126, 118, 0.25);
+  border-radius: var(--border-radius);
+  padding: 28px;
+  text-align: center;
+  box-shadow: inset 0 0 15px rgba(0,0,0,0.03);
+  transition: var(--transition);
+}
+
+.qr-section:hover {
+  box-shadow: 0 0 20px rgba(0,0,0,0.05), inset 0 0 15px rgba(0,0,0,0.05);
+}
+
+.countdown-display {
+  font-family: 'Inter', sans-serif;
+  font-size: 4.2rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  letter-spacing: -1.5px;
+  position: relative;
+  line-height: 1;
+}
+
+.countdown-display::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 3px;
+  background: var(--primary-gradient);
+  border-radius: 3px;
+  opacity: 0.8;
+}
+
+.student-card {
+  transition: var(--transition);
+  border-left-width: 4px;
+  background-color: var(--earth-beige);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+  cursor: pointer;
+}
+
+.student-card.answered {
+  border-left-color: var(--moss-green);
+}
+
+.student-card.late {
+  border-left-color: #a86b6b;
+}
+
+.student-card:hover {
+  transform: translateX(5px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.student-answer {
+  max-height: 100px;
+  overflow-y: auto;
+  background: var(--paper);
+  border-radius: 10px;
+  padding: 14px;
+  font-family: 'Noto Serif TC', serif;
+  border: 1px solid rgba(126, 126, 118, 0.15);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.student-answer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.student-answer::-webkit-scrollbar-track {
+  background: var(--paper);
+  border-radius: 3px;
+}
+
+.student-answer::-webkit-scrollbar-thumb {
+  background: var(--stone-gray);
+  border-radius: 3px;
+}
+
+.question-display {
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--earth-beige);
+  border-radius: var(--border-radius);
+  border: 1px dashed rgba(141, 123, 104, 0.4);
+  margin-bottom: 24px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 1.25rem;
+  line-height: 1.5;
+}
+
+.question-display span {
+  position: relative;
+  z-index: 1;
+}
+
+.copy-success {
+  background: rgba(95, 110, 85, 0.15);
+  border-color: var(--moss-green);
+  color: var(--moss-green);
+  box-shadow: 0 0 12px rgba(95, 110, 85, 0.2);
+}
+
+.answer-input-area {
+  transition: var(--transition);
+  position: relative;
+}
+
+.answer-input-area.submitted {
+  transform: scale(0.98);
+  opacity: 0.95;
+  box-shadow: 0 0 15px rgba(95, 110, 85, 0.2);
+}
+
+.answer-input-area.late {
+  border-left: 4px solid #a86b6b;
+  box-shadow: 0 0 15px rgba(168, 107, 107, 0.2);
+}
+
+.text-wabi {
+  color: var(--clay-brown);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+}
+
+.text-wabi-secondary {
+  color: var(--text-secondary);
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+}
+
+.icon-shadow {
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.12);
+  transition: var(--transition-fast);
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0);
+  }
+}
+
+.time-input-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--earth-beige);
+  border: 1px solid rgba(141, 123, 104, 0.3);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.time-input {
+  width: 75px;
+  background: transparent;
+  border: none;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--charcoal);
+  padding: 6px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.time-input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.time-input::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: var(--clay-brown);
+  transition: width 0.3s ease;
+  z-index: 0;
+}
+
+.time-input:focus::after {
+  width: 80%;
+}
+
+.time-unit {
+  color: var(--stone-gray);
+  font-weight: 600;
+  font-size: 1.2rem;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.room-code {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.65rem;
+  color: var(--clay-brown);
+  letter-spacing: 2px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  position: relative;
+  display: inline-block;
+}
+
+.room-code::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--moss-green);
+  opacity: 0.7;
+}
+
+.copyright-footer {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  padding: 6px 15px;
+  background: var(--earth-beige);
+  color: var(--charcoal);
+  border-radius: 12px 0 0 0;
+  border: 1px solid rgba(141, 123, 104, 0.25);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  z-index: 100;
+  box-shadow: -2px -2px 8px rgba(0,0,0,0.05);
+  transition: var(--transition);
+}
+
+.copyright-footer:hover {
+  transform: translateX(-3px);
+  box-shadow: -3px -3px 12px rgba(0,0,0,0.08);
+}
+
+.host-countdown-container {
+  text-align: center;
+  padding: 20px;
+  background: rgba(138, 118, 99, 0.04);
+  border-radius: var(--border-radius);
+  margin-top: 24px;
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(141, 123, 104, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.host-countdown {
+  font-family: 'Inter', sans-serif;
+  font-size: 3.6rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  letter-spacing: -1px;
+  position: relative;
+  z-index: 1;
+  line-height: 1;
+}
+
+.time-control-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+@media (min-width: 768px) {
+  .time-control-container {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+  .time-input-wrapper {
+    flex: 1;
+  }
+}
+
+.time-button-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 10;
+}
+
+.question-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.45rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.time-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+#participantsStatus {
+  scrollbar-width: thin;
+  scrollbar-color: var(--stone-gray) transparent;
+}
+
+#participantsStatus::-webkit-scrollbar {
+  width: 6px;
+}
+
+#participantsStatus::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#participantsStatus::-webkit-scrollbar-thumb {
+  background-color: var(--stone-gray);
+  border-radius: 3px;
+}
+
+#answersList {
+  scrollbar-width: thin;
+  scrollbar-color: var(--stone-gray) transparent;
+}
+
+#answersList::-webkit-scrollbar {
+  width: 6px;
+}
+
+#answersList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#answersList::-webkit-scrollbar-thumb {
+  background-color: var(--stone-gray);
+  border-radius: 3px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(138, 118, 99, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--clay-brown);
+}
+
+#submitBtn {
+  position: relative;
+  overflow: hidden;
+}
+
+#submitBtn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.6s;
+}
+
+#submitBtn:hover::after {
+  left: 100%;
+}
+
+.section-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 0.5rem;
+}
+
+.section-subtitle {
+  color: var(--text-secondary);
+  font-family: 'Inter', sans-serif;
+  font-size: 1.1rem;
+}
+
+.role-button {
+  transition: var(--transition);
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.role-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, var(--clay-brown), var(--moss-green));
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.role-button:hover::before {
+  opacity: 1;
+}
+
+.role-button span {
+  position: relative;
+  z-index: 2;
+}
+
+.role-icon {
+  font-size: 2.8rem;
+  margin-bottom: 1rem;
+  transition: var(--transition);
+}
+
+.role-button:hover .role-icon {
+  transform: scale(1.1);
+}
+
+.role-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.role-desc {
+  font-family: 'Inter', sans-serif;
+  color: var(--text-secondary);
+}
+
+/* 修改主持人按鈕樣式 */
+.role-button.primary {
+  background: rgba(138, 118, 99, 0.1); /* 淺棕色背景 */
+  border: 1px solid rgba(138, 118, 99, 0.3);
+}
+
+.role-button.primary:hover {
+  background: rgba(138, 118, 99, 0.15); /* 懸停時加深背景 */
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(138, 118, 99, 0.25);
+}
+
+/* 修改主持人圖標顏色 */
+.role-button.primary .role-icon {
+  color: var(--clay-brown); /* 深棕色圖標 */
+}
+
+/* 修改主持人文字顏色 */
+.role-button.primary .role-title,
+.role-button.primary .role-desc {
+  color: var(--charcoal); /* 深灰色文字確保可讀性 */
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+.glow-effect {
+  box-shadow: 0 0 15px rgba(138, 118, 99, 0.2);
+}
+
+.wabi-sabi-button:hover .icon-shadow {
+  transform: scale(1.1);
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes fadeInScale {
+  from { 
+    opacity: 0; 
+    transform: scale(0.95);
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+}
+
+.fade-in-scale {
+  animation: fadeInScale 0.5s ease-out forwards;
+}
+
+.floating {
+  animation: float 3s ease-in-out infinite;
+}
+
+@media (max-width: 768px) {
+  .countdown-display {
+    font-size: 3.2rem;
+  }
+  .host-countdown {
+    font-size: 2.8rem;
+  }
+  .section-title {
+    font-size: 1.8rem;
+  }
+  .role-button {
+    padding: 1.5rem;
+  }
+  .role-icon {
+    font-size: 2.2rem;
+  }
+  .time-input {
+    width: 60px;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .countdown-display {
+    font-size: 2.8rem;
+  }
+  .host-countdown {
+    font-size: 2.4rem;
+  }
+  .section-title {
+    font-size: 1.6rem;
+  }
+  .role-button {
+    padding: 1.2rem;
+  }
+  .role-icon {
+    font-size: 1.8rem;
+  }
+  .time-input-group {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .time-input {
+    width: 80px;
+  }
+}
+
+/* 編輯模態框樣式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal-content {
+  background: var(--paper);
+  border-radius: var(--border-radius);
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transform: translateY(20px);
+  transition: transform 0.3s ease;
+  position: relative;
+}
+
+.modal-overlay.active .modal-content {
+  transform: translateY(0);
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid rgba(141, 123, 104, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+
+.close-modal {
+  background: none;
+  border: none;
+  color: var(--stone-gray);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-modal:hover {
+  color: var(--clay-brown);
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  padding: 20px;
+  border-top: 1px solid rgba(141, 123, 104, 0.2);
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.answer-editor {
+  width: 100%;
+  min-height: 150px;
+  padding: 15px;
+  border: 1px solid rgba(141, 123, 104, 0.3);
+  border-radius: 12px;
+  font-family: 'Noto Serif TC', serif;
+  font-size: 1.1rem;
+  resize: vertical;
+  background: var(--earth-beige);
+  color: var(--text-primary);
+}
+
+.answer-editor:focus {
+  outline: none;
+  border-color: var(--clay-brown);
+  box-shadow: 0 0 0 3px rgba(138, 118, 99, 0.2);
+}
+
+.student-name-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.edit-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: var(--stone-gray);
+  font-size: 1.2rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.student-card:hover .edit-icon {
+  opacity: 1;
+}
+</style>
+</head>
+<body>
+<div class="container mx-auto px-4 py-10 max-w-6xl">
+<!-- 主選單 -->
+<div id="mainMenu" class="space-y-10">
+<header class="section-header fade-in-scale">
+<h1 class="section-title">
+<i class="fas fa-brush text-clay-brown mr-3 icon-shadow"></i>
+教學問答計時工具
+</h1>
+<p class="section-subtitle">簡潔高效的課堂問答計時工具</p>
+</header>
+<div class="wabi-sabi-card p-8 fade-in" style="animation-delay: 0.2s">
+<h2 class="text-2xl font-bold mb-8 text-center text-wabi">
+<i class="fas fa-user-cog mr-3"></i>
+選擇您的角色
+</h2>
+<div class="grid md:grid-cols-2 gap-8">
+<button onclick="showHostSection()" class="role-button primary wabi-sabi-button p-7 rounded-xl text-center group">
+<div class="transform transition-transform duration-300">
+<i class="fas fa-user-tie role-icon text-moss-green"></i>
+<div class="role-title">主持人</div>
+<div class="role-desc">設置問題與計時</div>
+</div>
+</button>
+<button onclick="showJoinSection()" class="role-button secondary wabi-sabi-button p-7 rounded-xl text-center group">
+<div class="transform transition-transform duration-300">
+<i class="fas fa-user-graduate role-icon text-moss-green"></i>
+<div class="role-title">學生</div>
+<div class="role-desc">加入問答</div>
+</div>
+</button>
+</div>
+</div>
+</div>
+<!-- 主持人介面 -->
+<div id="hostSection" class="hidden space-y-8">
+<header class="section-header fade-in-scale">
+<h1 class="section-title">
+<i class="fas fa-user-tie text-clay-brown mr-3"></i>
+主持人介面
+</h1>
+<p class="section-subtitle">房間代碼: <span id="hostRoomCode" class="room-code"></span></p>
+</header>
+<div class="grid lg:grid-cols-2 gap-9">
+<!-- 左側：QR Code & 控制 -->
+<div class="space-y-9">
+<div class="wabi-sabi-card p-7 fade-in">
+<div class="card-header mb-5">
+<div class="card-icon">
+<i class="fas fa-qrcode"></i>
+</div>
+<h2 class="text-xl font-bold text-wabi">分享房間</h2>
+</div>
+<div class="qr-section">
+<div class="mb-5">
+<h3 class="text-xl font-bold text-wabi mb-2">掃描加入問答</h3>
+<p class="text-wabi-secondary text-sm mb-4">學生可使用手機掃描此二維碼加入</p>
+</div>
+<div class="flex justify-center mb-5">
+<canvas id="qrCanvas" class="bg-earth-beige p-5 rounded-xl border border-stone-gray shadow-md"></canvas>
+</div>
+<div class="space-y-4">
+<button onclick="downloadQR()" class="wabi-sabi-button w-full py-3.5 rounded-xl font-medium">
+<i class="fas fa-download mr-2"></i>保存二維碼
+</button>
+<button onclick="copyShareLink()" id="copyLinkBtn" class="wabi-sabi-button w-full py-3.5 rounded-xl font-medium">
+<i class="fas fa-copy mr-2"></i>複製分享連結
+</button>
+</div>
+</div>
+</div>
+<div class="wabi-sabi-card p-7 fade-in" style="animation-delay: 0.1s">
+<div class="card-header mb-5">
+<div class="card-icon">
+<i class="fas fa-edit"></i>
+</div>
+<h2 class="text-xl font-bold text-wabi">問題設置</h2>
+</div>
+<div class="space-y-5">
+<div>
+<label class="block text-base font-medium text-wabi-secondary mb-2.5">問題內容</label>
+<textarea id="questionInput" class="input-field w-full px-4.5 py-3.5 rounded-xl min-h-[110px] resize-y" placeholder="請在此輸入問題..."></textarea>
+</div>
+<div class="time-control-container">
+<div class="time-input-wrapper">
+<div class="time-title">計時設定</div>
+<div class="time-input-group">
+<input type="number" id="minutesInput" class="input-field time-input px-3 py-2.5" value="1" min="0">
+<span class="time-unit">分</span>
+<input type="number" id="secondsInput" class="input-field time-input px-3 py-2.5" value="0" min="0" max="59">
+<span class="time-unit">秒</span>
+</div>
+</div>
+<div class="time-button-wrapper">
+<button id="startBtn" onclick="startSession()" class="wabi-sabi-button primary px-7 py-3.5 rounded-xl font-medium text-lg">
+<i class="fas fa-play mr-2"></i>開始
+</button>
+</div>
+</div>
+<div class="host-countdown-container hidden" id="hostCountdownContainer">
+<div class="host-countdown" id="hostCountdownDisplay">01:00</div>
+</div>
+</div>
+</div>
+</div>
+<!-- 右側：學生回答列表 -->
+<div class="space-y-9">
+<div class="wabi-sabi-card p-7 fade-in">
+<div class="card-header mb-5">
+<div class="card-icon">
+<i class="fas fa-users"></i>
+</div>
+<h2 class="text-xl font-bold text-wabi">參與學生
+<span class="text-base font-normal text-wabi-secondary ml-2">(已加入: <span id="participantCount">0</span> 人)</span>
+</h2>
+</div>
+<div id="participantsStatus" class="space-y-3 max-h-64 overflow-y-auto pr-2">
+<!-- 學生狀態將在此顯示 -->
+<div class="text-center py-10 text-wabi-secondary">尚未有人加入</div>
+</div>
+</div>
+<div class="wabi-sabi-card p-7 fade-in" style="animation-delay: 0.1s">
+<div class="card-header mb-5">
+<div class="card-icon">
+<i class="fas fa-comments"></i>
+</div>
+<h2 class="text-xl font-bold text-wabi">回答列表</h2>
+</div>
+<div id="answersList" class="space-y-5 max-h-[620px] overflow-y-auto pr-2">
+<!-- 學生回答將在此顯示 -->
+<div class="text-center py-12 text-wabi-secondary">尚未開始</div>
+</div>
+<div class="mt-8 flex justify-end space-x-5 pt-5 border-t border-stone-gray border-opacity-30">
+<button onclick="clearSession()" class="wabi-sabi-button danger px-7 py-3.5 rounded-xl font-medium">
+<i class="fas fa-broom mr-2"></i>清空
+</button>
+<button onclick="endSession()" class="wabi-sabi-button primary px-7 py-3.5 rounded-xl font-medium">
+<i class="fas fa-stop mr-2"></i>結束
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="text-center fade-in" style="animation-delay: 0.2s">
+<button onclick="leaveHost()" class="wabi-sabi-button px-9 py-3.5 rounded-xl font-medium text-lg">
+<i class="fas fa-door-open mr-2"></i>離開房間
+</button>
+</div>
+</div>
+<!-- 學生加入介面 -->
+<div id="joinSection" class="hidden space-y-10">
+<header class="section-header fade-in-scale">
+<h1 class="section-title">
+<i class="fas fa-user-graduate text-moss-green mr-3"></i>
+加入房間
+</h1>
+<p class="section-subtitle">請輸入您的姓名與房間代碼</p>
+</header>
+<div class="max-w-md mx-auto fade-in">
+<div class="wabi-sabi-card p-9">
+<div class="space-y-7">
+<div>
+<label class="block text-base font-medium text-wabi-secondary mb-3">您的姓名</label>
+<input type="text" id="studentName" class="input-field w-full px-5 py-3.5 rounded-xl" placeholder="請輸入您的姓名">
+</div>
+<div>
+<label class="block text-base font-medium text-wabi-secondary mb-3">房間代碼</label>
+<input type="text" id="joinRoomCode" class="input-field w-full px-5 py-3.5 rounded-xl text-center text-2xl tracking-wider font-mono" placeholder="000000" maxlength="6">
+</div>
+<div class="flex gap-5">
+<button onclick="joinAsStudent()" class="wabi-sabi-button primary flex-1 py-4 rounded-xl font-medium text-lg">
+<i class="fas fa-door-open mr-2"></i>進入
+</button>
+<button onclick="showMainMenu()" class="wabi-sabi-button px-6 py-4 rounded-xl">
+<i class="fas fa-arrow-left"></i>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- 學生答題介面 -->
+<div id="studentSection" class="hidden space-y-10">
+<header class="section-header fade-in-scale">
+<h1 class="section-title">
+<i class="fas fa-user-graduate text-moss-green mr-3"></i>
+學生作答
+</h1>
+<p class="section-subtitle">房間: <span id="studentRoomCode" class="room-code"></span> | 姓名: <span id="studentDisplayName"></span></p>
+</header>
+<div class="wabi-sabi-card p-9 text-center fade-in">
+<div class="question-display mb-8">
+<p id="questionDisplay" class="text-xl font-medium text-wabi-secondary">請等待主持人開始計時</p>
+</div>
+<div class="countdown-display mb-10" id="studentCountdown">01:00</div>
+<div id="answerInputArea" class="answer-input-area mb-9">
+<textarea id="studentAnswer" class="input-field w-full px-5 py-4 rounded-xl min-h-[160px] text-lg resize-y" placeholder="請在此輸入您的回答..." disabled></textarea>
+</div>
+<div class="flex justify-center">
+<button id="submitBtn" onclick="submitAnswer()" class="wabi-sabi-button primary px-9 py-4.5 rounded-xl font-medium text-lg hidden" disabled>
+<i class="fas fa-paper-plane mr-2"></i>提交
+</button>
+</div>
+<div id="submissionStatus" class="mt-7 text-lg font-medium text-wabi-secondary hidden">
+<i class="fas fa-check-circle text-moss-green mr-2"></i>已提交回答
+</div>
+</div>
+<div class="text-center fade-in">
+<button onclick="leaveStudent()" class="wabi-sabi-button px-9 py-3.5 rounded-xl font-medium text-lg">
+<i class="fas fa-door-open mr-2"></i>離開房間
+</button>
+</div>
+</div>
+</div>
+
+<!-- 編輯答案模態框 -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">編輯答案</h3>
+      <button class="close-modal" onclick="closeEditModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="mb-4">
+        <span class="student-name-tag" id="editingStudentName"></span>
+      </div>
+      <textarea class="answer-editor" id="answerEditor" placeholder="請編輯回答內容..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="wabi-sabi-button px-6 py-2.5 rounded-xl" onclick="closeEditModal()">取消</button>
+      <button class="wabi-sabi-button primary px-6 py-2.5 rounded-xl" onclick="saveEditedAnswer()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Firebase 配置
+const firebaseConfig = {
+apiKey: "AIzaSyB17JKsoCf-H66g13EphV9H7GfR3MreFOo",
+authDomain: "collect-358e3.firebaseapp.com",
+databaseURL: "https://collect-358e3-default-rtdb.firebaseio.com",
+projectId: "collect-358e3",
+storageBucket: "collect-358e3.firebasestorage.app",
+messagingSenderId: "1024060422420",
+appId: "1:1024060422420:web:52dd61dff75c7abc44aa01"
+};
+
+// 初始化 Firebase
+if (!firebase.apps.length) {
+firebase.initializeApp(firebaseConfig);
+}
+const database = firebase.database();
+
+// 顏色主題
+const answerColors = [
+  { border: '#8a7663', bg: 'rgba(138, 118, 99, 0.08)' }, // 棕色
+  { border: '#5f6e55', bg: 'rgba(95, 110, 85, 0.08)' }, // 綠色
+  { border: '#a86b6b', bg: 'rgba(168, 107, 107, 0.08)' }, // 紅色
+  { border: '#7b8a8a', bg: 'rgba(123, 138, 138, 0.08)' }, // 灰藍色
+  { border: '#8a7b65', bg: 'rgba(138, 123, 101, 0.08)' }, // 芥末色
+  { border: '#658a7b', bg: 'rgba(101, 138, 123, 0.08)' }, // 藍綠色
+  { border: '#8a658a', bg: 'rgba(138, 101, 138, 0.08)' }, // 紫色
+  { border: '#8a8a65', bg: 'rgba(138, 138, 101, 0.08)' }  // 橄欖色
+];
+
+// 全域變數
+let currentRoom = null;
+let currentUser = null;
+let isHost = false;
+let timer = null;
+let timeLimit = 60; // 預設60秒 = 1分鐘
+let remainingTime = 0;
+let roomRef = null;
+let sessionActive = false;
+let lastQuestionStartTime = null;
+let hasSubmitted = false;
+let currentQuestionId = null; // 用於追蹤當前問題ID
+let editingStudent = null; // 目前正在編輯的學生名稱
+
+// UI 控制函數
+function showMainMenu() {
+document.getElementById('mainMenu').classList.remove('hidden');
+document.getElementById('hostSection').classList.add('hidden');
+document.getElementById('joinSection').classList.add('hidden');
+document.getElementById('studentSection').classList.add('hidden');
+if (roomRef) {
+roomRef.off();
+roomRef = null;
+}
+clearInterval(timer);
+timer = null;
+// 隱藏主持人倒計時
+document.getElementById('hostCountdownContainer').classList.add('hidden');
+}
+
+function showHostSection() {
+document.getElementById('mainMenu').classList.add('hidden');
+document.getElementById('hostSection').classList.remove('hidden');
+document.getElementById('joinSection').classList.add('hidden');
+document.getElementById('studentSection').classList.add('hidden');
+// 創建新房間
+createRoom();
+}
+
+function showJoinSection() {
+document.getElementById('mainMenu').classList.add('hidden');
+document.getElementById('hostSection').classList.add('hidden');
+document.getElementById('joinSection').classList.remove('hidden');
+document.getElementById('studentSection').classList.add('hidden');
+// 檢查URL參數中是否有房間代碼
+const urlParams = new URLSearchParams(window.location.search);
+const roomCode = urlParams.get('room');
+if (roomCode) {
+document.getElementById('joinRoomCode').value = roomCode;
+}
+}
+
+function showStudentSection() {
+document.getElementById('mainMenu').classList.add('hidden');
+document.getElementById('hostSection').classList.add('hidden');
+document.getElementById('joinSection').classList.add('hidden');
+document.getElementById('studentSection').classList.remove('hidden');
+// 重置學生提交狀態
+hasSubmitted = false;
+document.getElementById('submissionStatus').classList.add('hidden');
+document.getElementById('answerInputArea').classList.remove('submitted', 'late');
+}
+
+// 生成房間代碼
+function generateRoomCode() {
+return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// 生成QR CODE
+function generateQRCode(roomCode) {
+const canvas = document.getElementById('qrCanvas');
+const shareUrl = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
+QRCode.toCanvas(canvas, shareUrl, {
+width: 200,
+height: 200,
+margin: 2,
+color: {
+dark: "#383833",
+light: "#fdfcf8"
+}
+}, function (error) {
+if (error) {
+console.error('QR CODE生成失敗:', error);
+alert('QR CODE生成失敗');
+}
+});
+}
+
+// 複製分享連結
+function copyShareLink() {
+const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoom}`;
+const copyBtn = document.getElementById('copyLinkBtn');
+navigator.clipboard.writeText(shareUrl).then(() => {
+copyBtn.classList.add('copy-success');
+copyBtn.innerHTML = '<i class="fas fa-check mr-2"></i>已複製！';
+setTimeout(() => {
+copyBtn.classList.remove('copy-success');
+copyBtn.innerHTML = '<i class="fas fa-copy mr-2"></i>複製分享連結';
+}, 3000);
+}).catch(err => {
+console.error('複製失敗:', err);
+prompt('請手動複製以下連結：', shareUrl);
+});
+}
+
+// 下載QR CODE
+function downloadQR() {
+const canvas = document.getElementById('qrCanvas');
+const link = document.createElement('a');
+link.download = `wabi-sabi-room-${currentRoom}-qr.png`;
+link.href = canvas.toDataURL();
+link.click();
+}
+
+// 創建房間
+async function createRoom() {
+try {
+const roomCode = generateRoomCode();
+const hostName = "主持人";
+const roomData = {
+code: roomCode,
+host: hostName,
+created: firebase.database.ServerValue.TIMESTAMP,
+participants: {},
+session: {
+active: false,
+question: "",
+questionId: Date.now(), // 新增問題ID
+timeLimit: 60, // 預設60秒
+startTime: null,
+endTime: null
+},
+answers: {}
+};
+await database.ref('class_rooms/' + roomCode).set(roomData);
+currentRoom = roomCode;
+currentUser = hostName;
+isHost = true;
+currentQuestionId = roomData.session.questionId;
+document.getElementById('hostRoomCode').textContent = roomCode;
+generateQRCode(roomCode);
+// 設置房間監聽器
+setupRoomListener();
+} catch (error) {
+console.error('創建房間失敗:', error);
+alert('創建房間失敗，請重試');
+}
+}
+
+// 加入房間作為學生
+async function joinAsStudent() {
+const studentName = document.getElementById('studentName').value.trim();
+const roomCode = document.getElementById('joinRoomCode').value.trim();
+if (!studentName || !roomCode) {
+alert('請輸入姓名和房間代碼');
+return;
+}
+if (roomCode.length !== 6) {
+alert('房間代碼必須是6位數');
+return;
+}
+try {
+const roomSnapshot = await database.ref('class_rooms/' + roomCode).once('value');
+if (!roomSnapshot.exists()) {
+alert('房間不存在');
+return;
+}
+const roomData = roomSnapshot.val();
+// 檢查是否已有同名學生
+if (roomData.participants && roomData.participants[studentName]) {
+alert('此名稱已被使用，請選擇其他名稱');
+return;
+}
+// 加入房間
+await database.ref('class_rooms/' + roomCode + '/participants/' + studentName).set({
+name: studentName,
+joined: firebase.database.ServerValue.TIMESTAMP,
+submitted: false,
+late: false,
+lastQuestionId: roomData.session.questionId || null
+});
+currentRoom = roomCode;
+currentUser = studentName;
+isHost = false;
+document.getElementById('studentRoomCode').textContent = roomCode;
+document.getElementById('studentDisplayName').textContent = studentName;
+// 設置房間監聽器
+setupRoomListener();
+// 顯示學生介面
+showStudentSection();
+} catch (error) {
+console.error('加入房間失敗:', error);
+alert('加入房間失敗，請重試');
+}
+}
+
+// 設置房間監聽器
+function setupRoomListener() {
+if (roomRef) {
+roomRef.off();
+}
+roomRef = database.ref('class_rooms/' + currentRoom);
+roomRef.on('value', (snapshot) => {
+if (snapshot.exists()) {
+const roomData = snapshot.val();
+// 更新參與者數量
+updateParticipantCount(roomData.participants);
+if (isHost) {
+// 更新主持人介面
+updateHostUI(roomData);
+} else {
+// 更新學生介面
+updateStudentUI(roomData);
+}
+} else {
+alert('房間已不存在');
+showMainMenu();
+}
+});
+}
+
+// 更新參與者數量
+function updateParticipantCount(participants) {
+const countElement = document.getElementById('participantCount');
+if (participants) {
+const participantArray = Object.values(participants);
+countElement.textContent = participantArray.length;
+updateParticipantsStatus(participants);
+} else {
+countElement.textContent = '0';
+document.getElementById('participantsStatus').innerHTML = '<div class="text-center py-10 text-wabi-secondary">尚未有人加入</div>';
+}
+}
+
+// 更新參與者狀態
+function updateParticipantsStatus(participants) {
+const statusElement = document.getElementById('participantsStatus');
+statusElement.innerHTML = '';
+if (!participants || Object.keys(participants).length === 0) {
+statusElement.innerHTML = '<div class="text-center py-10 text-wabi-secondary">尚未有人加入</div>';
+return;
+}
+const participantArray = Object.values(participants);
+participantArray.sort((a, b) => (a.joined || 0) - (b.joined || 0));
+participantArray.forEach(participant => {
+const div = document.createElement('div');
+div.className = 'flex items-center justify-between p-3.5 rounded-xl bg-earth-beige bg-opacity-40 hover:shadow-md transition-shadow';
+let statusText = participant.submitted ?
+(participant.late ? '<span class="text-red-600 font-medium">已提交(超時)</span>' : '<span class="text-moss-green font-medium">已提交</span>') :
+'<span class="text-stone-gray font-medium">未提交</span>';
+div.innerHTML = `
+<div class="flex items-center">
+<i class="fas fa-user text-clay-brown mr-3 text-lg"></i>
+<span class="font-medium text-base">${participant.name}</span>
+</div>
+<div class="font-medium">${statusText}</div>
+`;
+statusElement.appendChild(div);
+});
+}
+
+// 更新學生狀態
+function updateStudentUI(roomData) {
+const questionDisplay = document.getElementById('questionDisplay');
+const countdownDisplay = document.getElementById('studentCountdown');
+const answerInput = document.getElementById('studentAnswer');
+const submitBtn = document.getElementById('submitBtn');
+const submissionStatus = document.getElementById('submissionStatus');
+const answerInputArea = document.getElementById('answerInputArea');
+
+// 檢查是否是新問題
+const participant = roomData.participants?.[currentUser] || {};
+const isNewQuestion = roomData.session.questionId !== participant.lastQuestionId;
+
+// 如果是新問題，重置提交狀態
+if (isNewQuestion) {
+hasSubmitted = false;
+submissionStatus.classList.add('hidden');
+answerInputArea.classList.remove('submitted', 'late');
+answerInput.disabled = false;
+answerInput.value = '';
+document.getElementById('studentAnswer').value = '';
+}
+
+if (roomData.session.active) {
+// 顯示問題
+questionDisplay.textContent = roomData.session.question || '請輸入您的回答';
+questionDisplay.classList.remove('text-wabi-secondary');
+questionDisplay.classList.add('text-charcoal');
+
+// 啟動本地計時器
+if (roomData.session.startTime && !timer) {
+startLocalTimer(roomData.session.startTime, roomData.session.timeLimit);
+}
+
+// 檢查學生是否已提交
+if (participant.submitted && !isNewQuestion) {
+hasSubmitted = true;
+submissionStatus.classList.remove('hidden');
+answerInput.disabled = true;
+submitBtn.classList.add('hidden');
+answerInputArea.classList.add('submitted');
+if (participant.late) {
+answerInputArea.classList.add('late');
+}
+} else if (remainingTime > 0 && !hasSubmitted) {
+// 還可以回答
+answerInput.disabled = false;
+submitBtn.classList.remove('hidden');
+submitBtn.disabled = false;
+} else if (!hasSubmitted) {
+// 時間已到
+answerInput.disabled = true;
+submitBtn.classList.add('hidden');
+answerInput.placeholder = '時間已到';
+}
+} else {
+// 未開始
+questionDisplay.textContent = '請等待主持人開始計時';
+questionDisplay.classList.add('text-wabi-secondary');
+questionDisplay.classList.remove('text-charcoal');
+countdownDisplay.textContent = '00:00';
+answerInput.disabled = true;
+submitBtn.classList.add('hidden');
+answerInput.placeholder = '請等待主持人開始計時';
+clearInterval(timer);
+timer = null;
+}
+}
+
+// 啟動本地計時器
+function startLocalTimer(startTime, totalTime) {
+clearInterval(timer);
+lastQuestionStartTime = startTime;
+remainingTime = totalTime;
+timer = setInterval(() => {
+const currentTime = Date.now();
+const elapsed = Math.floor((currentTime - startTime) / 1000);
+remainingTime = Math.max(0, totalTime - elapsed);
+
+// 更新倒計時顯示
+updateCountdownDisplay(remainingTime);
+
+// 時間到
+if (remainingTime <= 0) {
+clearInterval(timer);
+timer = null;
+}
+}, 1000);
+
+// 立即更新一次顯示
+updateCountdownDisplay(remainingTime);
+}
+
+// 格式化並更新倒數計時顯示
+function updateCountdownDisplay(seconds) {
+const minutes = Math.floor(seconds / 60);
+const secs = seconds % 60;
+const formattedTime = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+// 更新學生介面
+const studentCountdown = document.getElementById('studentCountdown');
+if (studentCountdown) {
+studentCountdown.textContent = formattedTime;
+// 依剩餘時間改變顏色
+if (seconds <= 5) {
+studentCountdown.style.color = '#a86b6b';
+studentCountdown.classList.add('pulse');
+} else if (seconds <= 10) {
+studentCountdown.style.color = '#8a7663';
+studentCountdown.classList.remove('pulse');
+} else {
+studentCountdown.style.color = '#383833';
+studentCountdown.classList.remove('pulse');
+}
+}
+
+// 更新主持人介面
+const hostCountdownDisplay = document.getElementById('hostCountdownDisplay');
+if (hostCountdownDisplay) {
+hostCountdownDisplay.textContent = formattedTime;
+if (seconds <= 5) {
+hostCountdownDisplay.style.color = '#a86b6b';
+} else if (seconds <= 10) {
+hostCountdownDisplay.style.color = '#8a7663';
+} else {
+hostCountdownDisplay.style.color = '#383833';
+}
+}
+}
+
+// 更新主持人介面
+function updateHostUI(roomData) {
+// 更新剩餘時間
+if (roomData.session.active && roomData.session.startTime) {
+// 如果計時器尚未啟動，則啟動本地計時器
+if (!timer) {
+const now = Date.now();
+const elapsed = Math.floor((now - roomData.session.startTime) / 1000);
+remainingTime = Math.max(0, roomData.session.timeLimit - elapsed);
+startLocalTimer(roomData.session.startTime, roomData.session.timeLimit);
+}
+// 顯示主持人倒計時
+document.getElementById('hostCountdownContainer').classList.remove('hidden');
+// 更新按鈕狀態
+document.getElementById('startBtn').innerHTML = '<i class="fas fa-pause mr-2"></i>暫停';
+} else {
+// 停止計時器
+clearInterval(timer);
+timer = null;
+remainingTime = timeLimit;
+updateCountdownDisplay(remainingTime);
+document.getElementById('startBtn').innerHTML = '<i class="fas fa-play mr-2"></i>開始';
+// 隱藏主持人倒計時
+document.getElementById('hostCountdownContainer').classList.add('hidden');
+}
+
+// 更新回答列表
+updateAnswersList(roomData.answers, roomData.participants);
+}
+
+// 取得學生的顏色
+function getStudentColor(studentName) {
+// 使用學生名稱的哈希值來選擇一個顏色
+let hash = 0;
+for (let i = 0; i < studentName.length; i++) {
+hash = studentName.charCodeAt(i) + ((hash << 5) - hash);
+}
+const index = Math.abs(hash) % answerColors.length;
+return answerColors[index];
+}
+
+// 更新回答列表
+function updateAnswersList(answers, participants) {
+const answersList = document.getElementById('answersList');
+answersList.innerHTML = '';
+if (!sessionActive) {
+answersList.innerHTML = '<div class="text-center py-12 text-wabi-secondary">尚未開始</div>';
+return;
+}
+
+if (!answers || Object.keys(answers).length === 0) {
+answersList.innerHTML = '<div class="text-center py-12 text-wabi-secondary">尚未有回答</div>';
+return;
+}
+
+// 將答案轉換為陣列並排序（先顯示早提交的答案）
+const answersArray = Object.entries(answers)
+.map(([name, answerData]) => ({
+name,
+...answerData
+}))
+.sort((a, b) => a.timestamp - b.timestamp);
+
+answersArray.forEach((answer, index) => {
+const participant = participants[answer.name] || {};
+const isLate = participant.late || false;
+const studentColor = getStudentColor(answer.name);
+  
+const div = document.createElement('div');
+div.className = `student-card p-5 rounded-xl ${isLate ? 'late' : 'answered'} fade-in`;
+div.style.borderColor = studentColor.border;
+div.style.backgroundColor = studentColor.bg;
+div.onclick = () => isHost ? openEditModal(answer.name, answer.text) : null;
+
+const timestamp = new Date(answer.timestamp);
+const timeString = timestamp.toLocaleTimeString([], {
+hour: '2-digit',
+minute: '2-digit',
+second: '2-digit',
+hour12: false
+});
+
+// 添加編輯圖標
+const editIcon = isHost ? '<i class="fas fa-edit edit-icon"></i>' : '';
+
+div.innerHTML = `
+${editIcon}
+<div class="flex justify-between items-start mb-3">
+<div class="font-medium text-lg flex items-center">
+${isLate ? '<i class="fas fa-clock text-red-500 mr-2 text-lg"></i>' : '<i class="fas fa-check-circle text-moss-green mr-2 text-lg"></i>'}
+<span class="student-name-tag" style="background-color: ${studentColor.border}15; color: ${studentColor.border};">${answer.name}</span>
+</div>
+<div class="text-sm text-wabi-secondary bg-earth-beige px-3.5 py-1.5 rounded-full font-medium">
+${timeString} ${isLate ? '(超時)' : ''}
+</div>
+</div>
+<div class="student-answer mt-3 text-left whitespace-pre-wrap text-base">
+${answer.text.replace(/\n/g, '<br>')}
+</div>
+`;
+answersList.appendChild(div);
+});
+}
+
+// 打開編輯模態框
+function openEditModal(studentName, answerText) {
+editingStudent = studentName;
+document.getElementById('editingStudentName').textContent = studentName;
+document.getElementById('editingStudentName').style.backgroundColor = getStudentColor(studentName).border + '15';
+document.getElementById('editingStudentName').style.color = getStudentColor(studentName).border;
+document.getElementById('answerEditor').value = answerText.replace(/<br>/g, '\n');
+document.getElementById('editModal').classList.add('active');
+}
+
+// 關閉編輯模態框
+function closeEditModal() {
+document.getElementById('editModal').classList.remove('active');
+editingStudent = null;
+}
+
+// 保存編輯的答案
+async function saveEditedAnswer() {
+if (!editingStudent || !currentRoom) return;
+
+const editedText = document.getElementById('answerEditor').value.trim();
+if (!editedText) {
+alert('答案內容不能為空');
+return;
+}
+
+try {
+// 更新 Firebase 中的答案
+await database.ref(`class_rooms/${currentRoom}/answers/${editingStudent}`).update({
+text: editedText
+});
+
+// 關閉模態框
+closeEditModal();
+
+// 顯示成功訊息
+const successMessage = document.createElement('div');
+successMessage.className = 'fixed top-4 right-4 bg-moss-green text-white px-6 py-3 rounded-xl shadow-lg z-1000 fade-in';
+successMessage.textContent = '答案已成功更新';
+document.body.appendChild(successMessage);
+
+// 3秒後移除成功訊息
+setTimeout(() => {
+document.body.removeChild(successMessage);
+}, 3000);
+
+} catch (error) {
+console.error('更新答案失敗:', error);
+alert('更新答案失敗，請重試');
+}
+}
+
+// 開始/暫停計時
+async function startSession() {
+if (!isHost || !currentRoom) return;
+const question = document.getElementById('questionInput').value.trim();
+if (!question) {
+alert('請輸入問題內容');
+return;
+}
+
+// 取得分鐘和秒數輸入
+const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
+const seconds = parseInt(document.getElementById('secondsInput').value) || 0;
+timeLimit = minutes * 60 + seconds;
+if (timeLimit <= 0) {
+alert('請設定有效的時間');
+return;
+}
+
+const sessionRef = database.ref('class_rooms/' + currentRoom + '/session');
+const sessionSnapshot = await sessionRef.once('value');
+const currentSession = sessionSnapshot.val();
+
+if (currentSession.active) {
+// 暫停
+await sessionRef.update({
+active: false
+});
+clearInterval(timer);
+timer = null;
+sessionActive = false;
+// 隱藏主持人倒計時
+document.getElementById('hostCountdownContainer').classList.add('hidden');
+} else {
+// 開始新問題 - 先清除舊答案
+// 生成新問題ID
+const newQuestionId = Date.now();
+currentQuestionId = newQuestionId;
+await database.ref('class_rooms/' + currentRoom).update({
+answers: {}, // 清空所有答案
+session: {
+active: true,
+question: question,
+questionId: newQuestionId, // 設定新問題ID
+timeLimit: timeLimit,
+startTime: firebase.database.ServerValue.TIMESTAMP,
+endTime: null
+}
+});
+
+// 重置所有學生的提交狀態
+const participantsRef = database.ref('class_rooms/' + currentRoom + '/participants');
+const participantsSnapshot = await participantsRef.once('value');
+const participants = participantsSnapshot.val() || {};
+for (const name in participants) {
+if (participants.hasOwnProperty(name)) {
+await participantsRef.child(name).update({
+submitted: false,
+late: false,
+lastQuestionId: newQuestionId // 更新最後回答的問題ID
+});
+}
+}
+
+sessionActive = true;
+remainingTime = timeLimit;
+// 立即更新顯示
+updateCountdownDisplay(remainingTime);
+// 顯示主持人倒計時
+document.getElementById('hostCountdownContainer').classList.remove('hidden');
+}
+}
+
+// 結束計時
+async function endSession() {
+if (!isHost || !currentRoom) return;
+clearInterval(timer);
+timer = null;
+sessionActive = false;
+await database.ref('class_rooms/' + currentRoom + '/session').update({
+active: false,
+endTime: firebase.database.ServerValue.TIMESTAMP
+});
+// 隱藏主持人倒計時
+document.getElementById('hostCountdownContainer').classList.add('hidden');
+}
+
+// 清空本回合
+async function clearSession() {
+if (!isHost || !currentRoom) return;
+clearInterval(timer);
+timer = null;
+sessionActive = false;
+await database.ref('class_rooms/' + currentRoom).update({
+session: {
+active: false,
+question: "",
+questionId: Date.now(), // 新問題ID
+timeLimit: 60,
+startTime: null,
+endTime: null
+},
+answers: {}
+});
+
+// 重置所有學生的提交狀態
+const participantsRef = database.ref('class_rooms/' + currentRoom + '/participants');
+const participantsSnapshot = await participantsRef.once('value');
+const participants = participantsSnapshot.val() || {};
+for (const name in participants) {
+if (participants.hasOwnProperty(name)) {
+await participantsRef.child(name).update({
+submitted: false,
+late: false,
+lastQuestionId: null
+});
+}
+}
+
+// 重置UI
+remainingTime = 60;
+updateCountdownDisplay(remainingTime);
+// 隱藏主持人倒計時
+document.getElementById('hostCountdownContainer').classList.add('hidden');
+document.getElementById('questionInput').value = '';
+document.getElementById('minutesInput').value = '1';
+document.getElementById('secondsInput').value = '0';
+}
+
+// 提交答案
+async function submitAnswer() {
+if (!currentRoom || !currentUser || isHost || hasSubmitted) return;
+const answerText = document.getElementById('studentAnswer').value.trim();
+if (!answerText) {
+alert('請輸入答案');
+return;
+}
+
+try {
+// 檢查是否超時
+const roomSnapshot = await database.ref('class_rooms/' + currentRoom).once('value');
+const roomData = roomSnapshot.val();
+let isLate = false;
+if (roomData.session.active && roomData.session.startTime) {
+const startTime = roomData.session.startTime;
+const currentTime = Date.now();
+const elapsed = Math.floor((currentTime - startTime) / 1000);
+isLate = elapsed > roomData.session.timeLimit;
+}
+
+// 提交答案
+const answerData = {
+text: answerText,
+timestamp: firebase.database.ServerValue.TIMESTAMP,
+late: isLate
+};
+await database.ref('class_rooms/' + currentRoom + '/answers/' + currentUser).set(answerData);
+
+// 更新參與者狀態
+await database.ref('class_rooms/' + currentRoom + '/participants/' + currentUser).update({
+submitted: true,
+late: isLate,
+lastQuestionId: roomData.session.questionId
+});
+
+// 顯示提交成功
+hasSubmitted = true;
+const submissionStatus = document.getElementById('submissionStatus');
+const answerInputArea = document.getElementById('answerInputArea');
+submissionStatus.classList.remove('hidden');
+document.getElementById('studentAnswer').disabled = true;
+document.getElementById('submitBtn').classList.add('hidden');
+answerInputArea.classList.add('submitted');
+if (isLate) {
+answerInputArea.classList.add('late');
+submissionStatus.innerHTML = '<i class="fas fa-clock text-red-500 mr-2"></i>已超時提交';
+}
+} catch (error) {
+console.error('提交答案失敗:', error);
+alert('提交答案失敗，請重試');
+}
+}
+
+// 離開主持人介面
+async function leaveHost() {
+if (roomRef) {
+roomRef.off();
+roomRef = null;
+}
+if (currentRoom) {
+// 移除房間
+await database.ref('class_rooms/' + currentRoom).remove();
+}
+clearInterval(timer);
+timer = null;
+sessionActive = false;
+// 隱藏主持人倒計時
+document.getElementById('hostCountdownContainer').classList.add('hidden');
+currentRoom = null;
+currentUser = null;
+isHost = false;
+showMainMenu();
+}
+
+// 離開學生介面
+async function leaveStudent() {
+if (roomRef) {
+roomRef.off();
+roomRef = null;
+}
+if (currentRoom && currentUser) {
+// 移除參與者
+await database.ref('class_rooms/' + currentRoom + '/participants/' + currentUser).remove();
+}
+clearInterval(timer);
+timer = null;
+sessionActive = false;
+currentRoom = null;
+currentUser = null;
+isHost = false;
+hasSubmitted = false;
+showMainMenu();
+}
+
+// 頁面離開時清理
+window.addEventListener('beforeunload', () => {
+if (currentRoom && currentUser) {
+if (isHost) {
+// 主持人離開時移除房間
+database.ref('class_rooms/' + currentRoom).remove();
+} else {
+// 學生離開時移除參與者
+database.ref('class_rooms/' + currentRoom + '/participants/' + currentUser).remove();
+}
+}
+});
+
+// 關閉模態框當點擊遮罩層
+document.getElementById('editModal').addEventListener('click', (e) => {
+if (e.target === document.getElementById('editModal')) {
+closeEditModal();
+}
+});
+
+// 初始化頁面
+document.addEventListener('DOMContentLoaded', () => {
+// 檢查URL參數
+const urlParams = new URLSearchParams(window.location.search);
+const roomCode = urlParams.get('room');
+if (roomCode && roomCode.length === 6) {
+// 有房間代碼，直接進入加入頁面
+document.getElementById('joinRoomCode').value = roomCode;
+showJoinSection();
+} else {
+showMainMenu();
+}
+});
+
+// 按下ESC鍵關閉模態框
+document.addEventListener('keydown', (e) => {
+if (e.key === 'Escape' && document.getElementById('editModal').classList.contains('active')) {
+closeEditModal();
+}
+});
+</script>
+<footer class="copyright-footer">
+<p>Copyright © 2025 陳冠健. All rights reserved.</p>
+</footer>
+</body>
+</html>
