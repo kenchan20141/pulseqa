@@ -247,8 +247,11 @@ body::before {
 .student-answer {
   background: var(--paper);
   border-radius: 10px;
-  padding: 8px;
-  font-size: 1.5rem;
+    padding-top: 8px;
+  padding-right: 8px; /* 增加右邊距 */
+  padding-bottom: 8px;
+  padding-left: 8px;  /* 增加左邊距 */
+  font-size: 1.3rem;
   line-height: 1.8;
   line-height: 1.8; /* 添加這行，增加行距 */
   border: 1px solid rgba(126, 126, 118, 0.15);
@@ -919,7 +922,10 @@ body::before {
 /* 可編輯的學生答案樣式 */
 .answer-display {
   cursor: text;
-  padding: 8px;
+  padding-top: 8px;
+  padding-right: 8px; /* 增加右邊距 */
+  padding-bottom: 8px;
+  padding-left: 8px;  /* 增加左邊距 *
   border: 1px solid transparent;
   border-radius: 10px;
   transition: var(--transition);
@@ -929,7 +935,7 @@ body::before {
   word-wrap: break-word;
   overflow-wrap: break-word;
   outline: none;
-  font-size: 1.5rem; /* 添加這行，約 24px */
+  font-size: 1.3rem; /* 添加這行，約 24px */
   line-height: 1.8; /* 添加這行，增加行距 */
 }
 
@@ -998,7 +1004,7 @@ body::before {
 }
 
 .fullscreen-answer-content {
-  padding: 0.8rem; /* 約 13px */
+  padding: 1.1rem; /* 約 13px */
   font-size: 1.1rem;
   line-height: 1.7;
   white-space: pre-wrap;
@@ -1015,7 +1021,7 @@ body::before {
 .fullscreen-editor {
   width: 100%;
   min-height: 200px;
-  padding: 0.8rem;
+  padding: 1.1rem;
   border: 1px solid rgba(141, 123, 104, 0.3);
   border-radius: 12px;
   font-family: 'Noto Serif TC', serif;
@@ -1767,7 +1773,7 @@ function performUIUpdate(roomData) {
 }
 
 
-let currentFontSize = 1.5; // 預設字體大小 24px
+let currentFontSize = 1.3; // 預設字體大小 24px
 
 function initializeFontControls() {
   // 綁定字體控制按鈕事件
@@ -1789,7 +1795,7 @@ function increaseFontSize() {
 }
 
 function decreaseFontSize() {
-  currentFontSize = Math.max(1.2, currentFontSize - 0.3); // 下限 19px
+  currentFontSize = Math.max(1.1, currentFontSize - 0.3); // 下限 19px
   applyFontSize();
 }
 
