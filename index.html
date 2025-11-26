@@ -237,28 +237,15 @@ body::before {
 }
 
 .student-answer {
-  max-height: 100px;
-  overflow-y: auto;
   background: var(--paper);
   border-radius: 10px;
   padding: 14px;
   font-family: 'Noto Serif TC', serif;
   border: 1px solid rgba(126, 126, 118, 0.15);
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.student-answer::-webkit-scrollbar {
-  width: 6px;
-}
-
-.student-answer::-webkit-scrollbar-track {
-  background: var(--paper);
-  border-radius: 3px;
-}
-
-.student-answer::-webkit-scrollbar-thumb {
-  background: var(--stone-gray);
-  border-radius: 3px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .question-display {
@@ -989,7 +976,7 @@ body::before {
 </div>
 </div>
 </div>
-<!-- 右側：學生回答列表 -->
+<!-- 右側:學生回答列表 -->
 <div class="space-y-9">
 <div class="wabi-sabi-card p-7 fade-in">
 <div class="card-header mb-5">
@@ -1243,14 +1230,14 @@ const shareUrl = `${window.location.origin}${window.location.pathname}?room=${cu
 const copyBtn = document.getElementById('copyLinkBtn');
 navigator.clipboard.writeText(shareUrl).then(() => {
 copyBtn.classList.add('copy-success');
-copyBtn.innerHTML = '<i class="fas fa-check mr-2"></i>已複製！';
+copyBtn.innerHTML = '<i class="fas fa-check mr-2"></i>已複製!';
 setTimeout(() => {
 copyBtn.classList.remove('copy-success');
 copyBtn.innerHTML = '<i class="fas fa-copy mr-2"></i>複製分享連結';
 }, 3000);
 }).catch(err => {
 console.error('複製失敗:', err);
-prompt('請手動複製以下連結：', shareUrl);
+prompt('請手動複製以下連結:', shareUrl);
 });
 }
 
@@ -1294,7 +1281,7 @@ generateQRCode(roomCode);
 setupRoomListener();
 } catch (error) {
 console.error('創建房間失敗:', error);
-alert('創建房間失敗，請重試');
+alert('創建房間失敗,請重試');
 }
 }
 
@@ -1319,7 +1306,7 @@ return;
 const roomData = roomSnapshot.val();
 // 檢查是否已有同名學生
 if (roomData.participants && roomData.participants[studentName]) {
-alert('此名稱已被使用，請選擇其他名稱');
+alert('此名稱已被使用,請選擇其他名稱');
 return;
 }
 // 加入房間
@@ -1341,7 +1328,7 @@ setupRoomListener();
 showStudentSection();
 } catch (error) {
 console.error('加入房間失敗:', error);
-alert('加入房間失敗，請重試');
+alert('加入房間失敗,請重試');
 }
 }
 
@@ -1423,7 +1410,7 @@ const answerInputArea = document.getElementById('answerInputArea');
 const participant = roomData.participants?.[currentUser] || {};
 const isNewQuestion = roomData.session.questionId !== participant.lastQuestionId;
 
-// 如果是新問題，重置提交狀態
+// 如果是新問題,重置提交狀態
 if (isNewQuestion) {
 hasSubmitted = false;
 submissionStatus.classList.add('hidden');
@@ -1460,10 +1447,11 @@ answerInput.disabled = false;
 submitBtn.classList.remove('hidden');
 submitBtn.disabled = false;
 } else if (!hasSubmitted) {
-// 時間已到
+// 時間已到,禁止提交
 answerInput.disabled = true;
 submitBtn.classList.add('hidden');
-answerInput.placeholder = '時間已到';
+submitBtn.disabled = true;
+answerInput.placeholder = '時間已到,無法提交';
 }
 } else {
 // 未開始
@@ -1473,6 +1461,7 @@ questionDisplay.classList.remove('text-charcoal');
 countdownDisplay.textContent = '00:00';
 answerInput.disabled = true;
 submitBtn.classList.add('hidden');
+submitBtn.disabled = true;
 answerInput.placeholder = '請等待主持人開始計時';
 clearInterval(timer);
 timer = null;
@@ -1492,10 +1481,23 @@ remainingTime = Math.max(0, totalTime - elapsed);
 // 更新倒計時顯示
 updateCountdownDisplay(remainingTime);
 
-// 時間到
+// 時間到了,禁止學生提交
 if (remainingTime <= 0) {
 clearInterval(timer);
 timer = null;
+// 如果是學生端且尚未提交,則禁用提交按鈕
+if (!isHost && !hasSubmitted) {
+const submitBtn = document.getElementById('submitBtn');
+const answerInput = document.getElementById('studentAnswer');
+if (submitBtn) {
+submitBtn.classList.add('hidden');
+submitBtn.disabled = true;
+}
+if (answerInput) {
+answerInput.disabled = true;
+answerInput.placeholder = '時間已到,無法提交';
+}
+}
 }
 }, 1000);
 
@@ -1532,10 +1534,13 @@ if (hostCountdownDisplay) {
 hostCountdownDisplay.textContent = formattedTime;
 if (seconds <= 5) {
 hostCountdownDisplay.style.color = '#a86b6b';
+hostCountdownDisplay.classList.add('pulse');
 } else if (seconds <= 10) {
 hostCountdownDisplay.style.color = '#8a7663';
+hostCountdownDisplay.classList.remove('pulse');
 } else {
 hostCountdownDisplay.style.color = '#383833';
+hostCountdownDisplay.classList.remove('pulse');
 }
 }
 }
@@ -1544,11 +1549,8 @@ hostCountdownDisplay.style.color = '#383833';
 function updateHostUI(roomData) {
 // 更新剩餘時間
 if (roomData.session.active && roomData.session.startTime) {
-// 如果計時器尚未啟動，則啟動本地計時器
+// 如果計時器尚未啟動,則啟動本地計時器
 if (!timer) {
-const now = Date.now();
-const elapsed = Math.floor((now - roomData.session.startTime) / 1000);
-remainingTime = Math.max(0, roomData.session.timeLimit - elapsed);
 startLocalTimer(roomData.session.startTime, roomData.session.timeLimit);
 }
 // 顯示主持人倒計時
@@ -1595,7 +1597,7 @@ answersList.innerHTML = '<div class="text-center py-12 text-wabi-secondary">尚�
 return;
 }
 
-// 將答案轉換為陣列並排序（先顯示早提交的答案）
+// 將答案轉換為陣列並排序(先顯示早提交的答案)
 const answersArray = Object.entries(answers)
 .map(([name, answerData]) => ({
 name,
@@ -1636,7 +1638,7 @@ ${isLate ? '<i class="fas fa-clock text-red-500 mr-2 text-lg"></i>' : '<i class=
 ${timeString} ${isLate ? '(超時)' : ''}
 </div>
 </div>
-<div class="student-answer mt-3 text-left whitespace-pre-wrap text-base">
+<div class="student-answer mt-3 text-left text-base">
 ${answer.text.replace(/\n/g, '<br>')}
 </div>
 `;
@@ -1692,7 +1694,7 @@ document.body.removeChild(successMessage);
 
 } catch (error) {
 console.error('更新答案失敗:', error);
-alert('更新答案失敗，請重試');
+alert('更新答案失敗,請重試');
 }
 }
 
@@ -1845,6 +1847,12 @@ const elapsed = Math.floor((currentTime - startTime) / 1000);
 isLate = elapsed > roomData.session.timeLimit;
 }
 
+// 如果時間已到,不允許提交
+if (remainingTime <= 0) {
+alert('時間已到,無法提交答案');
+return;
+}
+
 // 提交答案
 const answerData = {
 text: answerText,
@@ -1874,7 +1882,7 @@ submissionStatus.innerHTML = '<i class="fas fa-clock text-red-500 mr-2"></i>已�
 }
 } catch (error) {
 console.error('提交答案失敗:', error);
-alert('提交答案失敗，請重試');
+alert('提交答案失敗,請重試');
 }
 }
 
@@ -1945,7 +1953,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const urlParams = new URLSearchParams(window.location.search);
 const roomCode = urlParams.get('room');
 if (roomCode && roomCode.length === 6) {
-// 有房間代碼，直接進入加入頁面
+// 有房間代碼,直接進入加入頁面
 document.getElementById('joinRoomCode').value = roomCode;
 showJoinSection();
 } else {
