@@ -1478,39 +1478,42 @@ timer = null;
 
 // 啟動本地計時器
 function startLocalTimer(startTime, totalTime) {
-clearInterval(timer);
-lastQuestionStartTime = startTime;
-remainingTime = totalTime;
-timer = setInterval(() => {
-const currentTime = Date.now();
-const elapsed = Math.floor((currentTime - startTime) / 1000);
-remainingTime = Math.max(0, totalTime - elapsed);
-
-// 更新倒計時顯示
-updateCountdownDisplay(remainingTime);
-
-// 時間到了,禁止學生提交
-if (remainingTime <= 0) {
-clearInterval(timer);
-timer = null;
-// 如果是學生端且尚未提交,則禁用提交按鈕
-if (!isHost && !hasSubmitted) {
-const submitBtn = document.getElementById('submitBtn');
-const answerInput = document.getElementById('studentAnswer');
-if (submitBtn) {
-submitBtn.classList.add('hidden');
-submitBtn.disabled = true;
-}
-if (answerInput) {
-answerInput.disabled = true;
-answerInput.placeholder = '時間已到,無法提交';
-}
-}
-}
-}, 1000);
-
-// 立即更新一次顯示
-updateCountdownDisplay(remainingTime);
+  // 先清除所有現有計時器
+  clearInterval(timer);
+  
+  lastQuestionStartTime = startTime;
+  remainingTime = totalTime;
+  
+  timer = setInterval(() => {
+    const currentTime = Date.now();
+    const elapsed = Math.floor((currentTime - startTime) / 1000);
+    remainingTime = Math.max(0, totalTime - elapsed);
+    
+    // 更新倒計時顯示
+    updateCountdownDisplay(remainingTime);
+    
+    // 時間到了,禁止學生提交
+    if (remainingTime <= 0) {
+      clearInterval(timer);
+      timer = null;
+      // 如果是學生端且尚未提交,則禁用提交按鈕
+      if (!isHost && !hasSubmitted) {
+        const submitBtn = document.getElementById('submitBtn');
+        const answerInput = document.getElementById('studentAnswer');
+        if (submitBtn) {
+          submitBtn.classList.add('hidden');
+          submitBtn.disabled = true;
+        }
+        if (answerInput) {
+          answerInput.disabled = true;
+          answerInput.placeholder = '時間已到,無法提交';
+        }
+      }
+    }
+  }, 1000);
+  
+  // 立即更新一次顯示
+  updateCountdownDisplay(remainingTime);
 }
 
 // 格式化並更新倒數計時顯示
@@ -1555,29 +1558,32 @@ hostCountdownDisplay.classList.remove('pulse');
 
 // 更新主持人介面
 function updateHostUI(roomData) {
-// 更新剩餘時間
-if (roomData.session.active && roomData.session.startTime) {
-// 如果計時器尚未啟動,則啟動本地計時器
-if (!timer) {
-startLocalTimer(roomData.session.startTime, roomData.session.timeLimit);
-}
-// 顯示主持人倒計時
-document.getElementById('hostCountdownContainer').classList.remove('hidden');
-// 更新按鈕狀態
-document.getElementById('startBtn').innerHTML = '<i class="fas fa-pause mr-2"></i>暫停';
-} else {
-// 停止計時器
-clearInterval(timer);
-timer = null;
-remainingTime = timeLimit;
-updateCountdownDisplay(remainingTime);
-document.getElementById('startBtn').innerHTML = '<i class="fas fa-play mr-2"></i>開始';
-// 隱藏主持人倒計時
-document.getElementById('hostCountdownContainer').classList.add('hidden');
-}
-
-// 更新回答列表
-updateAnswersList(roomData.answers, roomData.participants);
+  // 更新剩餘時間
+  if (roomData.session.active && roomData.session.startTime) {
+    // 如果計時器尚未啟動,則啟動本地計時器
+    if (!timer) {
+      startLocalTimer(roomData.session.startTime, roomData.session.timeLimit);
+    }
+    
+    // 顯示主持人倒計時
+    document.getElementById('hostCountdownContainer').classList.remove('hidden');
+    
+    // 更新按鈕狀態
+    document.getElementById('startBtn').innerHTML = '<i class="fas fa-pause mr-2"></i>暫停';
+  } else {
+    // 停止計時器
+    clearInterval(timer);
+    timer = null;
+    remainingTime = timeLimit;
+    updateCountdownDisplay(remainingTime);
+    document.getElementById('startBtn').innerHTML = '<i class="fas fa-play mr-2"></i>開始';
+    
+    // 隱藏主持人倒計時
+    document.getElementById('hostCountdownContainer').classList.add('hidden');
+  }
+  
+  // 更新回答列表
+  updateAnswersList(roomData.answers, roomData.participants);
 }
 
 // 取得學生的顏色
@@ -1708,74 +1714,84 @@ alert('更新答案失敗,請重試');
 
 // 開始/暫停計時
 async function startSession() {
-if (!isHost || !currentRoom) return;
-const question = document.getElementById('questionInput').value.trim();
-if (!question) {
-alert('請輸入問題內容');
-return;
-}
-
-// 取得分鐘和秒數輸入
-const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
-const seconds = parseInt(document.getElementById('secondsInput').value) || 0;
-timeLimit = minutes * 60 + seconds;
-if (timeLimit <= 0) {
-alert('請設定有效的時間');
-return;
-}
-
-const sessionRef = database.ref('class_rooms/' + currentRoom + '/session');
-const sessionSnapshot = await sessionRef.once('value');
-const currentSession = sessionSnapshot.val();
-
-if (currentSession.active) {
-// 暫停
-await sessionRef.update({
-active: false
-});
-clearInterval(timer);
-timer = null;
-sessionActive = false;
-// 隱藏主持人倒計時
-document.getElementById('hostCountdownContainer').classList.add('hidden');
-} else {
-// 開始新問題 - 先清除舊答案
-// 生成新問題ID
-const newQuestionId = Date.now();
-currentQuestionId = newQuestionId;
-await database.ref('class_rooms/' + currentRoom).update({
-answers: {}, // 清空所有答案
-session: {
-active: true,
-question: question,
-questionId: newQuestionId, // 設定新問題ID
-timeLimit: timeLimit,
-startTime: firebase.database.ServerValue.TIMESTAMP,
-endTime: null
-}
-});
-
-// 重置所有學生的提交狀態
-const participantsRef = database.ref('class_rooms/' + currentRoom + '/participants');
-const participantsSnapshot = await participantsRef.once('value');
-const participants = participantsSnapshot.val() || {};
-for (const name in participants) {
-if (participants.hasOwnProperty(name)) {
-await participantsRef.child(name).update({
-submitted: false,
-late: false,
-lastQuestionId: newQuestionId // 更新最後回答的問題ID
-});
-}
-}
-
-sessionActive = true;
-remainingTime = timeLimit;
-// 立即更新顯示
-updateCountdownDisplay(remainingTime);
-// 顯示主持人倒計時
-document.getElementById('hostCountdownContainer').classList.remove('hidden');
-}
+  if (!isHost || !currentRoom) return;
+  
+  const question = document.getElementById('questionInput').value.trim();
+  if (!question) {
+    alert('請輸入問題內容');
+    return;
+  }
+  
+  // 取得分鐘和秒數輸入
+  const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
+  const seconds = parseInt(document.getElementById('secondsInput').value) || 0;
+  timeLimit = minutes * 60 + seconds;
+  
+  if (timeLimit <= 0) {
+    alert('請設定有效的時間');
+    return;
+  }
+  
+  const sessionRef = database.ref('class_rooms/' + currentRoom + '/session');
+  const sessionSnapshot = await sessionRef.once('value');
+  const currentSession = sessionSnapshot.val();
+  
+  if (currentSession.active) {
+    // 暫停 - 確保完全清除計時器
+    clearInterval(timer);
+    timer = null;
+    
+    await sessionRef.update({
+      active: false
+    });
+    
+    sessionActive = false;
+    // 隱藏主持人倒計時
+    document.getElementById('hostCountdownContainer').classList.add('hidden');
+  } else {
+    // 開始新問題 - 先清除舊計時器
+    clearInterval(timer);
+    timer = null;
+    
+    // 生成新問題ID
+    const newQuestionId = Date.now();
+    currentQuestionId = newQuestionId;
+    
+    await database.ref('class_rooms/' + currentRoom).update({
+      answers: {}, // 清空所有答案
+      session: {
+        active: true,
+        question: question,
+        questionId: newQuestionId, // 設定新問題ID
+        timeLimit: timeLimit,
+        startTime: firebase.database.ServerValue.TIMESTAMP,
+        endTime: null
+      }
+    });
+    
+    // 重置所有學生的提交狀態
+    const participantsRef = database.ref('class_rooms/' + currentRoom + '/participants');
+    const participantsSnapshot = await participantsRef.once('value');
+    const participants = participantsSnapshot.val() || {};
+    
+    for (const name in participants) {
+      if (participants.hasOwnProperty(name)) {
+        await participantsRef.child(name).update({
+          submitted: false,
+          late: false,
+          lastQuestionId: newQuestionId // 更新最後回答的問題ID
+        });
+      }
+    }
+    
+    sessionActive = true;
+    remainingTime = timeLimit;
+    
+    // 立即更新顯示
+    updateCountdownDisplay(remainingTime);
+    // 顯示主持人倒計時
+    document.getElementById('hostCountdownContainer').classList.remove('hidden');
+  }
 }
 
 // 結束計時
@@ -1936,51 +1952,50 @@ showMainMenu();
 }
 
 // 頁面離開時清理
+// 頁面離開時清理
 window.addEventListener('beforeunload', () => {
-if (currentRoom && currentUser) {
-if (isHost) {
-// 主持人離開時移除房間
-database.ref('class_rooms/' + currentRoom).remove();
-} else {
-// 學生離開時移除參與者
-database.ref('class_rooms/' + currentRoom + '/participants/' + currentUser).remove();
-}
-}
-});
-
-// 關閉模態框當點擊遮罩層
-document.getElementById('editModal').addEventListener('click', (e) => {
-if (e.target === document.getElementById('editModal')) {
-closeEditModal();
-}
+  // 新增：清理計時器
+  clearInterval(timer);
+  timer = null;
+  
+  if (currentRoom && currentUser) {
+    if (isHost) {
+      // 主持人離開時移除房間
+      database.ref('class_rooms/' + currentRoom).remove();
+    } else {
+      // 學生離開時移除參與者
+      database.ref('class_rooms/' + currentRoom + '/participants/' + currentUser).remove();
+    }
+  }
 });
 
 // 初始化頁面
 document.addEventListener('DOMContentLoaded', () => {
-
-
-// 自動調整學生答案文字框高度
-const studentAnswer = document.getElementById('studentAnswer');
-if (studentAnswer) {
-  studentAnswer.addEventListener('input', function() {
-    this.style.height = 'auto'; // 先重置高度
-    this.style.height = this.scrollHeight + 'px'; // 根據內容調整高度
-  });
-  // 初始調整（如果有預設內容）
-  studentAnswer.style.height = 'auto';
-  studentAnswer.style.height = studentAnswer.scrollHeight + 'px';
-}
-    
-// 檢查URL參數
-const urlParams = new URLSearchParams(window.location.search);
-const roomCode = urlParams.get('room');
-if (roomCode && roomCode.length === 6) {
-// 有房間代碼,直接進入加入頁面
-document.getElementById('joinRoomCode').value = roomCode;
-showJoinSection();
-} else {
-showMainMenu();
-}
+  // 確保計時器為null
+  timer = null;
+  
+  // 自動調整學生答案文字框高度
+  const studentAnswer = document.getElementById('studentAnswer');
+  if (studentAnswer) {
+    studentAnswer.addEventListener('input', function() {
+      this.style.height = 'auto'; // 先重置高度
+      this.style.height = this.scrollHeight + 'px'; // 根據內容調整高度
+    });
+    // 初始調整（如果有預設內容）
+    studentAnswer.style.height = 'auto';
+    studentAnswer.style.height = studentAnswer.scrollHeight + 'px';
+  }
+   
+  // 檢查URL參數
+  const urlParams = new URLSearchParams(window.location.search);
+  const roomCode = urlParams.get('room');
+  if (roomCode && roomCode.length === 6) {
+    // 有房間代碼,直接進入加入頁面
+    document.getElementById('joinRoomCode').value = roomCode;
+    showJoinSection();
+  } else {
+    showMainMenu();
+  }
 });
 
 // 按下ESC鍵關閉模態框
