@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>脈問堂</title>
+<title>教學問答計時工具</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -160,6 +160,14 @@ body::before {
   font-weight: 500;
   transition: var(--transition);
   box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+
+    #studentAnswer {
+  min-height: 300px; /* 大幅增加初始高度，例如從 160px 改成 300px 或更大，視需求調整 */
+  overflow: hidden; /* 隱藏滾動條 */
+  resize: none; /* 禁止用戶手動調整大小 */
+  white-space: pre-wrap; /* 確保自動換行並保留空白 */
+  word-wrap: break-word; /* 長單詞自動斷行 */
 }
 
 .input-field:focus {
@@ -878,7 +886,7 @@ body::before {
 <header class="section-header fade-in-scale">
 <h1 class="section-title">
 <i class="fas fa-brush text-clay-brown mr-3 icon-shadow"></i>
-脈問堂
+教學問答計時工具
 </h1>
 <p class="section-subtitle">簡潔高效的課堂問答計時工具</p>
 </header>
@@ -1949,6 +1957,20 @@ closeEditModal();
 
 // 初始化頁面
 document.addEventListener('DOMContentLoaded', () => {
+
+
+// 自動調整學生答案文字框高度
+const studentAnswer = document.getElementById('studentAnswer');
+if (studentAnswer) {
+  studentAnswer.addEventListener('input', function() {
+    this.style.height = 'auto'; // 先重置高度
+    this.style.height = this.scrollHeight + 'px'; // 根據內容調整高度
+  });
+  // 初始調整（如果有預設內容）
+  studentAnswer.style.height = 'auto';
+  studentAnswer.style.height = studentAnswer.scrollHeight + 'px';
+}
+    
 // 檢查URL參數
 const urlParams = new URLSearchParams(window.location.search);
 const roomCode = urlParams.get('room');
@@ -1969,7 +1991,7 @@ closeEditModal();
 });
 </script>
 <footer class="copyright-footer">
-<p>Copyright © 2025 陳冠健. All rights reserved.</p>
+<p>Copyright © 2025 陳. All rights reserved.</p>
 </footer>
 </body>
 </html>
