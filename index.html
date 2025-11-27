@@ -1944,13 +1944,24 @@ function updateStudentUI(roomData) {
     submissionStatus.classList.add('hidden');
     answerInputArea.classList.remove('submitted', 'late');
 
-    if (currentMode === 'qa') {
-        const textarea = document.createElement('textarea');
-        textarea.id = 'studentAnswer';
-        textarea.className = 'input-field w-full px-5 py-4 rounded-xl min-h-[160px] text-lg resize-y';
-        textarea.placeholder = '請在此輸入您的回答...';
-        container.appendChild(textarea);
-    } else if (currentMode === 'outline') {
+   if (currentMode === 'qa') {
+    const textarea = document.createElement('textarea');
+    textarea.id = 'studentAnswer';
+    textarea.className = 'input-field w-full px-5 py-4 rounded-xl min-h-[160px] text-lg no-modal-editor'; // 添加no-modal-editor類
+    textarea.placeholder = '請在此輸入您的回答...';
+    // 添加自動換行樣式
+    textarea.style.overflow = 'hidden';
+    textarea.style.whiteSpace = 'pre-wrap';
+    textarea.style.wordWrap = 'break-word';
+    textarea.style.resize = 'none'; // 禁用調整大小
+    container.appendChild(textarea);
+    
+    // 添加自動調整高度功能
+    textarea.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(300, this.scrollHeight) + 'px'; // 設置最大高度
+    });
+} else if (currentMode === 'outline') {
         const type = roomData.session.outlineConfig?.type || 'narrative';
         renderStudentOutlineUI(type);
     }
