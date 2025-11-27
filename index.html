@@ -1939,15 +1939,13 @@ function updateStudentUI(roomData) {
   const participant = roomData.participants?.[currentUser] || {};
   
   // Determine current mode and question ID from session data
-  const currentMode = roomData.session.mode || 'qa';
-  const currentQID = roomData.session.questionId;
-  
-  // Check what is currently rendered
-  const renderedMode = container.getAttribute('data-mode');
-  const renderedQID = container.getAttribute('data-qid');
-
-  // If UI needs update (Mode changed OR Question changed OR First load)
-  if (currentMode !== renderedMode || currentQID != renderedQID) {
+ const currentMode = roomData.session.mode || 'qa';
+const currentQID = String(roomData.session.questionId); // ← 修正 1
+// Check what is currently rendered
+const renderedMode = container.getAttribute('data-mode');
+const renderedQID = container.getAttribute('data-qid');
+// If UI needs update (Mode changed OR Question changed OR First load)
+if (currentMode !== renderedMode || currentQID !== renderedQID) { // ← 修正 2
     // Clear and Rebuild
     container.innerHTML = '';
     container.setAttribute('data-mode', currentMode);
