@@ -1935,86 +1935,158 @@ function updateStudentUI(roomData) {
   const submissionStatus = document.getElementById('submissionStatus');
   const answerInputArea = document.getElementById('answerInputArea');
   const container = document.getElementById('studentInputContainer');
-
   const participant = roomData.participants?.[currentUser] || {};
   
-  // Determine current mode and question ID from session data
- const currentMode = roomData.session.mode || 'qa';
-const currentQID = String(roomData.session.questionId); // ← 修正 1
-// Check what is currently rendered
-const renderedMode = container.getAttribute('data-mode');
-const renderedQID = container.getAttribute('data-qid');
-// If UI needs update (Mode changed OR Question changed OR First load)
-if (currentMode !== renderedMode || currentQID !== renderedQID) { // ← 修正 2
-    // Clear and Rebuild
+  // 確保 container 存在
+  if (!container) return;
+  
+  // 獲取當前回合 ID 和已渲染的回合 ID
+  const currentMode = roomData.session?.mode || 'qa';
+  const currentQID = roomData.session?.questionId ? String(roomData.session.questionId) : null;
+  const renderedQID = container.getAttribute('data-qid');
+  
+  // 檢查是否需要更新 UI (模式變更、問題 ID 變更、或首次加載)
+  const needsUIUpdate = currentMode !== container.getAttribute('data-mode') || 
+                        currentQID !== renderedQID ||
+                        !container.hasChildNodes();
+  
+  if (needsUIUpdate && currentQID) {
+    // 保存滾動位置
+    const scrollPos = container.scrollTop;
+    
+    // 清除並重建 UI
     container.innerHTML = '';
     container.setAttribute('data-mode', currentMode);
     container.setAttribute('data-qid', currentQID);
     
-    // Reset local submission states because the UI changed/Question changed
+    // 重置所有本地提交狀態 - 這是關鍵修復
     hasSubmitted = false;
     submissionStatus.classList.add('hidden');
     answerInputArea.classList.remove('submitted', 'late');
-
-   if (currentMode === 'qa') {
-    const textarea = document.createElement('textarea');
-    textarea.id = 'studentAnswer';
-    textarea.className = 'input-field w-full px-5 py-4 rounded-xl min-h-[160px] text-lg no-modal-editor'; // 添加 no-modal-editor 類
-    textarea.placeholder = '請在此輸入您的回答...';
-    container.appendChild(textarea);
-} else if (currentMode === 'outline') {
-        const type = roomData.session.outlineConfig?.type || 'narrative';
-        renderStudentOutlineUI(type);
+    
+    // 根據模式創建適當的輸入元素
+    if (currentMode === 'qa') {
+      const textarea = document.createElement('textarea');
+      textarea.id = 'studentAnswer';
+      textarea.className = 'input-field w-full px-5 py-4 rounded-xl min-h-[160px] text-lg no-modal-editor';
+      textarea.placeholder = '請在此輸入您的回答...';
+      textarea.disabled = true; // 初始禁用，等待計時開始
+      container.appendChild(textarea);
+    } else if (currentMode === 'outline') {
+      const type = roomData.session?.outlineConfig?.type || 'narrative';
+      renderStudentOutlineUI(type);
+      
+      // 禁用所有輸入元素，等待計時開始
+      const inputs = container.querySelectorAll('textarea, select, button');
+      inputs.forEach(el => el.disabled = true);
     }
+    
+    // 恢復滾動位置
+    container.scrollTop = scrollPos;
   }
-
-  if (roomData.session.active) {
-    questionDisplay.textContent = roomData.session.question || '請輸入您的回答';
+  
+  // 更新問題顯示
+  if (roomData.session?.active) {
+    const questionText = roomData.session.question || '請輸入您的回答';
+    questionDisplay.textContent = questionText;
     questionDisplay.classList.remove('text-wabi-secondary');
     questionDisplay.classList.add('text-charcoal');
-
+    
+    // 啟動本地計時器
     if (roomData.session.startTime && !timer) {
       startLocalTimer(roomData.session.startTime, roomData.session.timeLimit);
     }
-
-    // Enable inputs
-    const inputs = container.querySelectorAll('textarea, select, button');
-    inputs.forEach(el => el.disabled = false);
-
-    if (participant.submitted && currentQID == renderedQID) {
-      hasSubmitted = true;
-      submissionStatus.classList.remove('hidden');
-      inputs.forEach(el => el.disabled = true);
-      submitBtn.classList.add('hidden');
-      answerInputArea.classList.add('submitted');
-      if (participant.late) {
-        answerInputArea.classList.add('late');
-      }
-    } else if (remainingTime > 0 && !hasSubmitted) {
-      submitBtn.classList.remove('hidden');
-      submitBtn.disabled = false;
-    } else if (!hasSubmitted) {
-      inputs.forEach(el => {
-        el.disabled = true;
-        if(el.tagName === 'TEXTAREA') el.placeholder = '時間已到,無法提交';
-      });
+    
+    // 處理計時狀態
+    if (remainingTime <= 0) {
+      // 時間已到
+      disableAllInputs();
       submitBtn.classList.add('hidden');
       submitBtn.disabled = true;
+      
+      // 只有當學生尚未提交且當前問題匹配時才標記為超時
+      if (!participant.submitted && String(participant.lastQuestionId) === currentQID) {
+        const inputs = container.querySelectorAll('textarea');
+        inputs.forEach(el => {
+          el.disabled = true;
+          el.placeholder = '時間已到,無法提交';
+        });
+      }
+    } else {
+      // 還有時間
+      enableInputsIfNotSubmitted();
     }
   } else {
+    // 計時未開始或已結束
     questionDisplay.textContent = '請等待主持人開始計時';
     questionDisplay.classList.add('text-wabi-secondary');
     questionDisplay.classList.remove('text-charcoal');
     countdownDisplay.textContent = '10:00';
-    const inputs = container.querySelectorAll('textarea, select, button');
-    inputs.forEach(el => {
-        el.disabled = true;
-        if(el.tagName === 'TEXTAREA') el.placeholder = '請等待主持人開始計時';
-    });
+    
+    disableAllInputs();
     submitBtn.classList.add('hidden');
     submitBtn.disabled = true;
+    
     clearInterval(timer);
     timer = null;
+  }
+  
+  // 輔助函數：禁用所有輸入
+  function disableAllInputs() {
+    const inputs = container.querySelectorAll('textarea, select, button');
+    inputs.forEach(el => {
+      el.disabled = true;
+      if (el.tagName === 'TEXTAREA') {
+        el.placeholder = '請等待主持人開始計時';
+      }
+    });
+  }
+  
+  // 輔助函數：如果未提交則啟用輸入
+  function enableInputsIfNotSubmitted() {
+    // 檢查學生是否已針對當前問題提交
+    const hasSubmittedCurrentQuestion = 
+      participant.submitted && 
+      String(participant.lastQuestionId) === currentQID;
+    
+    if (hasSubmittedCurrentQuestion) {
+      // 已提交當前問題
+      hasSubmitted = true;
+      submissionStatus.classList.remove('hidden');
+      
+      // 如果是超時提交，添加相應樣式
+      if (participant.late) {
+        answerInputArea.classList.add('late');
+      }
+      
+      // 禁用所有輸入
+      const inputs = container.querySelectorAll('textarea, select, button');
+      inputs.forEach(el => el.disabled = true);
+      
+      submitBtn.classList.add('hidden');
+      submitBtn.disabled = true;
+      answerInputArea.classList.add('submitted');
+    } else {
+      // 未提交或提交的是舊問題
+      hasSubmitted = false;
+      submissionStatus.classList.add('hidden');
+      answerInputArea.classList.remove('submitted', 'late');
+      
+      // 啟用輸入
+      const inputs = container.querySelectorAll('textarea, select, button');
+      inputs.forEach(el => {
+        el.disabled = false;
+        if (el.tagName === 'TEXTAREA') {
+          el.placeholder = '請在此輸入您的回答...';
+        }
+      });
+      
+      // 顯示提交按鈕
+      if (remainingTime > 0) {
+        submitBtn.classList.remove('hidden');
+        submitBtn.disabled = false;
+      }
+    }
   }
 }
 
