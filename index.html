@@ -2093,23 +2093,17 @@ function updateStudentUI(roomData) {
 function startLocalTimer(startTime, totalTime) {
   clearInterval(timer);
   lastQuestionStartTime = startTime;
+  remainingTime = totalTime;
   
-  // 計算初始剩餘時間，考慮已過去的時間
-  const elapsed = Math.floor((Date.now() - startTime) / 1000);
-  remainingTime = Math.max(0, totalTime - elapsed);
-  
-  // 確保不為負數
-  if (remainingTime < 0) remainingTime = 0;
-  
-  // 使用簡單的倒計時邏輯，每次只減1秒
   timer = setInterval(() => {
-    if (remainingTime > 0) {
-      remainingTime--;
-      updateCountdownDisplay(remainingTime);
-    } else {
+    const currentTime = Date.now();
+    const elapsed = Math.floor((currentTime - startTime) / 1000);
+    remainingTime = Math.max(0, totalTime - elapsed);
+    updateCountdownDisplay(remainingTime);
+    
+    if (remainingTime <= 0) {
       clearInterval(timer);
       timer = null;
-      updateCountdownDisplay(0);
       if (!isHost && !hasSubmitted) {
         const submitBtn = document.getElementById('submitBtn');
         const inputs = document.querySelectorAll('textarea');
@@ -2118,13 +2112,12 @@ function startLocalTimer(startTime, totalTime) {
           submitBtn.disabled = true;
         }
         inputs.forEach(el => {
-          el.disabled = true;
-          if(el.tagName === 'TEXTAREA') el.placeholder = '時間已到,無法提交';
+            el.disabled = true;
+            el.placeholder = '時間已到,無法提交';
         });
       }
     }
   }, 1000);
-  
   updateCountdownDisplay(remainingTime);
 }
 
