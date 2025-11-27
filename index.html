@@ -170,6 +170,20 @@ body::before {
   word-wrap: break-word; 
 }
 
+  #studentAnswer.no-modal-editor {
+    overflow-y: auto; /* 允許垂直滾動 */
+    max-height: 300px; /* 設置最大高度，超過會顯示滾動條 */
+    resize: vertical; /* 允許手動調整大小 */
+}
+
+/* 確保textarea在聚焦時有正確的外觀 */
+#studentAnswer.no-modal-editor:focus {
+    outline: none;
+    border-color: var(--clay-brown);
+    box-shadow: 0 0 0 3px rgba(138, 118, 99, 0.2);
+    background-color: var(--earth-beige);
+}
+
 .input-field:focus {
   outline: none;
   border-color: var(--clay-brown);
@@ -1947,20 +1961,9 @@ function updateStudentUI(roomData) {
    if (currentMode === 'qa') {
     const textarea = document.createElement('textarea');
     textarea.id = 'studentAnswer';
-    textarea.className = 'input-field w-full px-5 py-4 rounded-xl min-h-[160px] text-lg no-modal-editor'; // 添加no-modal-editor類
+    textarea.className = 'input-field w-full px-5 py-4 rounded-xl min-h-[160px] text-lg no-modal-editor'; // 添加 no-modal-editor 類
     textarea.placeholder = '請在此輸入您的回答...';
-    // 添加自動換行樣式
-    textarea.style.overflow = 'hidden';
-    textarea.style.whiteSpace = 'pre-wrap';
-    textarea.style.wordWrap = 'break-word';
-    textarea.style.resize = 'none'; // 禁用調整大小
     container.appendChild(textarea);
-    
-    // 添加自動調整高度功能
-    textarea.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = Math.min(300, this.scrollHeight) + 'px'; // 設置最大高度
-    });
 } else if (currentMode === 'outline') {
         const type = roomData.session.outlineConfig?.type || 'narrative';
         renderStudentOutlineUI(type);
