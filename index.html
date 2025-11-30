@@ -1469,8 +1469,9 @@ const answerColors = [
 let currentRoom = null;
 let currentUser = null;
 let isHost = false;
-let timer = null;
-let timeLimit = 600; // 10 minutes default
+let timer = null; // 這是給學生端使用的
+let hostTimer = null; // 【新增】這是專門給主持人端使用的獨立計時器
+let timeLimit = 600; 
 let remainingTime = 0;
 let roomRef = null;
 let sessionActive = false;
@@ -1482,18 +1483,33 @@ let currentQuestionId = null;
 let studentNarrativeStructure = 'fourPart';
 let studentArgSegments = 3;
 
+// Student local state for outline configuration
+let studentNarrativeStructure = 'fourPart';
+let studentArgSegments = 3;
+
 function showMainMenu() {
-document.getElementById('mainMenu').classList.remove('hidden');
-document.getElementById('hostSection').classList.add('hidden');
-document.getElementById('joinSection').classList.add('hidden');
-document.getElementById('studentSection').classList.add('hidden');
-if (roomRef) {
-roomRef.off();
-roomRef = null;
-}
-clearInterval(timer);
-timer = null;
-document.getElementById('hostCountdownContainer').classList.add('hidden');
+  document.getElementById('mainMenu').classList.remove('hidden');
+  document.getElementById('hostSection').classList.add('hidden');
+  document.getElementById('joinSection').classList.add('hidden');
+  document.getElementById('studentSection').classList.add('hidden');
+  if (roomRef) {
+    roomRef.off();
+    roomRef = null;
+  }
+  
+  // 清除學生計時器
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+  }
+  
+  // 清除主持人計時器
+  if (hostTimer) {
+    clearInterval(hostTimer);
+    hostTimer = null;
+  }
+  
+  document.getElementById('hostCountdownContainer').classList.add('hidden');
 }
 
 function showHostSection() {
@@ -2157,21 +2173,100 @@ function updateCountdownDisplay(seconds) {
   }
 }
 
-function updateHostUI(roomData) {
-  if (roomData.session.active && roomData.session.startTime) {
-    if (!timer) {
-      startLocalTimer(roomData.session.startTime, roomData.session.timeLimit);
+
+function startHostTimer(startTime, totalTime) {
+  // 防止重複開啟：如果已經有計時器在跑，先清除它
+  if (hostTimer) {
+    clearInterval(hostTimer);
+    hostTimer = null;
+  }
+  
+  // 立即執行一次以更新畫面
+  updateHostTimerLogic(startTime, totalTime);
+  
+  // 啟動循環，每秒更新一次
+  hostTimer = setInterval(() => {
+    updateHostTimerLogic(startTime, totalTime);
+  }, 1000);
+}
+
+function updateHostTimerLogic(startTime, totalTime) {
+  const currentTime = Date.now();
+  // 計算已經經過的秒數 (使用數學計算而非累減，保證準確)
+  const elapsed = Math.floor((currentTime - startTime) / 1000);
+  const remaining = Math.max(0, totalTime - elapsed);
+  
+  // 更新主持人的顯示界面
+  const hostCountdownDisplay = document.getElementById('hostCountdownDisplay');
+  if (hostCountdownDisplay) {
+    const minutes = Math.floor(remaining / 60);
+    const secs = remaining % 60;
+    const formattedTime = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    
+    hostCountdownDisplay.textContent = formattedTime;
+    
+    // 樣式處理 (紅色/脈衝效果)
+    if (remaining <= 5) {
+      hostCountdownDisplay.style.color = '#a86b6b';
+      hostCountdownDisplay.classList.add('pulse');
+    } else if (remaining <= 10) {
+      hostCountdownDisplay.style.color = '#8a7663';
+      hostCountdownDisplay.classList.remove('pulse');
+    } else {
+      hostCountdownDisplay.style.color = '#383833';
+      hostCountdownDisplay.classList.remove('pulse');
     }
+  }
+
+  // 時間到自動停止計時器
+  if (remaining <= 0) {
+    if (hostTimer) {
+      clearInterval(hostTimer);
+      hostTimer = null;
+    }
+  }
+}
+
+  
+
+function updateHostUI(roomData) {
+  // 檢查會話是否活躍且有開始時間
+  if (roomData.session.active && roomData.session.startTime) {
+    // 顯示計時容器和暫停按鈕
     document.getElementById('hostCountdownContainer').classList.remove('hidden');
     document.getElementById('startBtn').innerHTML = '<i class="fas fa-pause mr-2"></i>暫停';
+    
+    // 【關鍵修復】：只有當 hostTimer 不存在時才啟動
+    // 這樣即使 Firebase 數據因為學生加入而頻繁更新，也不會導致計時器疊加
+    if (!hostTimer) {
+      startHostTimer(roomData.session.startTime, roomData.session.timeLimit);
+    }
   } else {
-    clearInterval(timer);
-    timer = null;
-    remainingTime = timeLimit;
-    updateCountdownDisplay(remainingTime);
+    // 如果會話停止，清除主持人計時器
+    if (hostTimer) {
+      clearInterval(hostTimer);
+      hostTimer = null;
+    }
+    
+    // 重置顯示為設定的時間（靜態顯示）
+    // 這裡我們直接計算要顯示的靜態時間，不依賴全局 remainingTime
+    const limit = roomData.session.timeLimit || timeLimit;
+    const minutes = Math.floor(limit / 60);
+    const secs = limit % 60;
+    const formattedTime = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    
+    const hostDisplay = document.getElementById('hostCountdownDisplay');
+    if (hostDisplay) {
+        hostDisplay.textContent = formattedTime;
+        hostDisplay.style.color = '#383833';
+        hostDisplay.classList.remove('pulse');
+    }
+    
     document.getElementById('startBtn').innerHTML = '<i class="fas fa-play mr-2"></i>開始';
     document.getElementById('hostCountdownContainer').classList.add('hidden');
   }
+  
+  // 更新學生回答列表
   updateAnswersList(roomData.answers, roomData.participants);
 }
 
@@ -2476,25 +2571,26 @@ async function startSession() {
   const sessionSnapshot = await sessionRef.once('value');
   const currentSession = sessionSnapshot.val();
   
+  // 在切換狀態前，先確保清除本地計時器，避免邏輯衝突
+  if (hostTimer) {
+    clearInterval(hostTimer);
+    hostTimer = null;
+  }
+  
   if (currentSession.active) {
-    clearInterval(timer);
-    timer = null;
+    // 暫停會話
     await sessionRef.update({
       active: false
     });
     sessionActive = false;
     document.getElementById('hostCountdownContainer').classList.add('hidden');
   } else {
-    clearInterval(timer);
-    timer = null;
-    
+    // 開始會話
     const newQuestionId = Date.now();
     currentQuestionId = newQuestionId;
     
-    // Gather config
     const mode = document.querySelector('input[name="questionMode"]:checked').value;
     const outlineType = document.querySelector('input[name="outlineType"]:checked').value;
-    // Host only sends the mode and the general type. Structure and segments are decided by student.
     
     const outlineConfig = {
         type: outlineType
@@ -2514,6 +2610,7 @@ async function startSession() {
       }
     });
     
+    // 重置所有參與者狀態
     const participantsRef = database.ref('class_rooms/' + currentRoom + '/participants');
     const participantsSnapshot = await participantsRef.once('value');
     const participants = participantsSnapshot.val() || {};
@@ -2531,59 +2628,85 @@ async function startSession() {
     sessionActive = true;
     remainingTime = timeLimit;
     
-    updateCountdownDisplay(remainingTime);
+    // 這裡不需要手動調用 updateCountdownDisplay，
+    // 因為 Firebase 的監聽器會觸發 updateHostUI，進而啟動 hostTimer
     document.getElementById('hostCountdownContainer').classList.remove('hidden');
   }
 }
 
 async function endSession() {
-if (!isHost || !currentRoom) return;
-clearInterval(timer);
-timer = null;
-sessionActive = false;
-await database.ref('class_rooms/' + currentRoom + '/session').update({
-active: false,
-endTime: firebase.database.ServerValue.TIMESTAMP
-});
-document.getElementById('hostCountdownContainer').classList.add('hidden');
+  if (!isHost || !currentRoom) return;
+  
+  // 清除主持人專用計時器
+  if (hostTimer) {
+    clearInterval(hostTimer);
+    hostTimer = null;
+  }
+  
+  // 清除學生端共用計時器變量 (雖然主持人不用這個，但保持乾淨)
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+  }
+
+  sessionActive = false;
+  await database.ref('class_rooms/' + currentRoom + '/session').update({
+    active: false,
+    endTime: firebase.database.ServerValue.TIMESTAMP
+  });
+  document.getElementById('hostCountdownContainer').classList.add('hidden');
 }
 
 async function clearSession() {
-if (!isHost || !currentRoom) return;
-clearInterval(timer);
-timer = null;
-sessionActive = false;
-await database.ref('class_rooms/' + currentRoom).update({
-session: {
-active: false,
-question: "",
-questionId: Date.now(), 
-timeLimit: 600,
-startTime: null,
-endTime: null
-},
-answers: {}
-});
+  if (!isHost || !currentRoom) return;
+  
+  // 清除主持人專用計時器
+  if (hostTimer) {
+    clearInterval(hostTimer);
+    hostTimer = null;
+  }
+  
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+  }
+  
+  sessionActive = false;
+  await database.ref('class_rooms/' + currentRoom).update({
+    session: {
+      active: false,
+      question: "",
+      questionId: Date.now(), 
+      timeLimit: 600,
+      startTime: null,
+      endTime: null
+    },
+    answers: {}
+  });
 
-const participantsRef = database.ref('class_rooms/' + currentRoom + '/participants');
-const participantsSnapshot = await participantsRef.once('value');
-const participants = participantsSnapshot.val() || {};
-for (const name in participants) {
-if (participants.hasOwnProperty(name)) {
-await participantsRef.child(name).update({
-submitted: false,
-late: false,
-lastQuestionId: null
-});
-}
-}
+  const participantsRef = database.ref('class_rooms/' + currentRoom + '/participants');
+  const participantsSnapshot = await participantsRef.once('value');
+  const participants = participantsSnapshot.val() || {};
+  for (const name in participants) {
+    if (participants.hasOwnProperty(name)) {
+      await participantsRef.child(name).update({
+        submitted: false,
+        late: false,
+        lastQuestionId: null
+      });
+    }
+  }
 
-remainingTime = 600;
-updateCountdownDisplay(remainingTime);
-document.getElementById('hostCountdownContainer').classList.add('hidden');
-document.getElementById('questionInput').value = '';
-document.getElementById('minutesInput').value = '10';
-document.getElementById('secondsInput').value = '0';
+  // 重置 UI
+  remainingTime = 600;
+  // 更新顯示為預設值
+  const hostDisplay = document.getElementById('hostCountdownDisplay');
+  if(hostDisplay) hostDisplay.textContent = "10:00";
+  
+  document.getElementById('hostCountdownContainer').classList.add('hidden');
+  document.getElementById('questionInput').value = '';
+  document.getElementById('minutesInput').value = '10';
+  document.getElementById('secondsInput').value = '0';
 }
 
 async function submitAnswer() {
@@ -2677,23 +2800,33 @@ async function submitAnswer() {
 }
 
 async function leaveHost() {
-if (roomRef) {
-roomRef.off();
-roomRef = null;
-}
-if (currentRoom) {
-await database.ref('class_rooms/' + currentRoom).remove();
-}
-clearInterval(timer);
-timer = null;
-sessionActive = false;
-document.getElementById('hostCountdownContainer').classList.add('hidden');
-currentRoom = null;
-currentUser = null;
-isHost = false;
-showMainMenu();
+  if (roomRef) {
+    roomRef.off();
+    roomRef = null;
+  }
+  if (currentRoom) {
+    await database.ref('class_rooms/' + currentRoom).remove();
+  }
+  
+  // 清除所有計時器
+  if (hostTimer) {
+    clearInterval(hostTimer);
+    hostTimer = null;
+  }
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+  }
+  
+  sessionActive = false;
+  document.getElementById('hostCountdownContainer').classList.add('hidden');
+  currentRoom = null;
+  currentUser = null;
+  isHost = false;
+  showMainMenu();
 }
 
+  
 async function leaveStudent() {
 if (roomRef) {
 roomRef.off();
