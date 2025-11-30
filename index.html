@@ -2188,8 +2188,12 @@ function startHostTimer(startTime, totalTime) {
 
 function updateHostTimerLogic(startTime, totalTime) {
   const currentTime = Date.now();
-  // 計算已經經過的秒數 (使用數學計算而非累減，保證準確)
-  const elapsed = Math.floor((currentTime - startTime) / 1000);
+  
+  // 【修正】加入 Math.max(0, ... )
+  // 目的：防止因為電腦時間比伺服器慢，導致算出 "負數" 的經過時間，
+  // 讓倒計時不會出現 "10:01" 這種反常現象。
+  const elapsed = Math.max(0, Math.floor((currentTime - startTime) / 1000));
+  
   const remaining = Math.max(0, totalTime - elapsed);
   
   // 更新主持人的顯示界面
