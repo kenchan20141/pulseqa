@@ -28,11 +28,9 @@
 --primary-gradient: linear-gradient(135deg, var(--clay-brown), var(--charcoal));
 --secondary-gradient: linear-gradient(135deg, var(--moss-green), #535f4c);
 }
-
 * {
   transition: var(--transition-fast);
 }
-
 body {
   font-family: 'Noto Serif TC', serif;
   background: var(--earth-beige);
@@ -42,7 +40,6 @@ body {
   line-height: 1.6;
   position: relative;
 }
-
 body::before {
   content: "";
   position: fixed;
@@ -53,7 +50,6 @@ body::before {
   background: none;
   z-index: -2;
 }
-
 .wabi-sabi-card {
   background: var(--paper);
   border: 1px solid rgba(141, 123, 104, 0.15);
@@ -63,7 +59,6 @@ body::before {
   position: relative;
   overflow: hidden;
 }
-
 .wabi-sabi-card::before {
   content: '';
   position: absolute;
@@ -74,7 +69,6 @@ body::before {
   background: linear-gradient(90deg, var(--moss-green), var(--clay-brown));
   opacity: 0.85;
 }
-
 .wabi-sabi-button {
   background: var(--earth-beige);
   color: var(--charcoal);
@@ -90,7 +84,6 @@ body::before {
   overflow: hidden;
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
-
 .wabi-sabi-button::before {
   content: '';
   position: absolute;
@@ -103,53 +96,43 @@ body::before {
   transition: transform 0.3s ease;
   z-index: 0;
 }
-
 .wabi-sabi-button:hover::before {
   transform: translateY(0);
 }
-
 .wabi-sabi-button span {
   position: relative;
   z-index: 1;
 }
-
 .wabi-sabi-button:hover {
   transform: translateY(-3px);
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
-
 .wabi-sabi-button:active {
   transform: translateY(0);
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
-
 .wabi-sabi-button.primary {
   background: var(--primary-gradient);
   color: white;
   border: none;
   box-shadow: 0 4px 12px rgba(138, 118, 99, 0.3);
 }
-
 .wabi-sabi-button.primary:hover {
   box-shadow: 0 6px 18px rgba(138, 118, 99, 0.4);
 }
-
 .wabi-sabi-button.primary:active {
   transform: translateY(1px);
   box-shadow: 0 2px 8px rgba(138, 118, 99, 0.35);
 }
-
 .wabi-sabi-button.danger {
   background: linear-gradient(135deg, #a86b6b, #8b5555);
   color: white;
   border: none;
   box-shadow: 0 4px 12px rgba(168, 107, 107, 0.3);
 }
-
 .wabi-sabi-button.danger:hover {
   box-shadow: 0 6px 18px rgba(168, 107, 107, 0.4);
 }
-
 .input-field {
   background-color: var(--earth-beige);
   border: 1px solid rgba(126, 126, 118, 0.3);
@@ -161,21 +144,18 @@ body::before {
   transition: var(--transition);
   box-shadow: 0 2px 4px rgba(0,0,0,0.03);
 }
-
 #studentAnswer {
-  min-height: 300px; 
-  overflow: hidden; 
-  resize: none; 
-  white-space: pre-wrap; 
-  word-wrap: break-word; 
+  min-height: 300px;
+  overflow: hidden;
+  resize: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
-
   #studentAnswer.no-modal-editor {
     overflow-y: auto; /* 允許垂直滾動 */
     max-height: 300px; /* 設置最大高度，超過會顯示滾動條 */
     resize: vertical; /* 允許手動調整大小 */
 }
-
 /* 確保textarea在聚焦時有正確的外觀 */
 #studentAnswer.no-modal-editor:focus {
     outline: none;
@@ -183,20 +163,17 @@ body::before {
     box-shadow: 0 0 0 3px rgba(138, 118, 99, 0.2);
     background-color: var(--earth-beige);
 }
-
 .input-field:focus {
   outline: none;
   border-color: var(--clay-brown);
   box-shadow: 0 0 0 3px rgba(138, 118, 99, 0.2);
   background-color: var(--earth-beige);
 }
-
 .input-field::placeholder {
   color: var(--text-secondary);
   opacity: 0.7;
   font-weight: 400;
 }
-
 /* Modal Styles from Sansi */
 .outline-modal-overlay {
     display: none;
@@ -213,7 +190,6 @@ body::before {
     box-sizing: border-box;
     backdrop-filter: blur(5px);
 }
-
 .outline-modal-content {
     background-color: #fdfdfd;
     padding: 25px;
@@ -227,7 +203,6 @@ body::before {
     display: flex;
     flex-direction: column;
 }
-
 .outline-modal-content h3 {
     margin-top: 0;
     margin-bottom: 15px;
@@ -237,7 +212,6 @@ body::before {
     border-bottom: 1px solid rgba(138, 118, 99, 0.2);
     padding-bottom: 10px;
 }
-
 #modal-textarea {
     width: 100%;
     box-sizing: border-box;
@@ -252,20 +226,17 @@ body::before {
     color: #333;
     font-family: 'Noto Serif TC', serif;
 }
-
 #modal-textarea:focus {
     outline: none;
     border-color: var(--clay-brown);
     box-shadow: 0 0 0 3px rgba(138, 118, 99, 0.1);
 }
-
 .outline-modal-content .modal-buttons {
     display: flex;
     justify-content: flex-end;
     margin-top: 15px;
     gap: 10px;
 }
-
 .outline-modal-content .preview-close-btn {
     position: absolute;
     top: 15px;
@@ -277,22 +248,18 @@ body::before {
     color: var(--stone-gray);
     transition: color 0.2s;
 }
-
 .outline-modal-content .preview-close-btn:hover {
     color: var(--charcoal);
 }
-
 /* Hover effect for inputs to indicate they are clickable */
 textarea:not(.no-modal-editor), input[type="text"]:not(.no-modal-editor) {
     cursor: pointer;
     transition: background-color 0.2s;
 }
-
 textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):hover {
     background-color: rgba(138, 118, 99, 0.05);
 }
 /* End Modal Styles */
-
 .qr-section {
   background: var(--earth-beige);
   border: 2px solid rgba(126, 126, 118, 0.25);
@@ -302,11 +269,9 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   box-shadow: inset 0 0 15px rgba(0,0,0,0.03);
   transition: var(--transition);
 }
-
 .qr-section:hover {
   box-shadow: 0 0 20px rgba(0,0,0,0.05), inset 0 0 15px rgba(0,0,0,0.05);
 }
-
 .countdown-display {
   font-family: 'Noto Serif TC', serif;
   font-size: 4.2rem;
@@ -317,7 +282,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   position: relative;
   line-height: 1;
 }
-
 .countdown-display::after {
   content: '';
   position: absolute;
@@ -330,7 +294,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   border-radius: 3px;
   opacity: 0.8;
 }
-
 .student-card {
   transition: var(--transition);
   border-left-width: 4px;
@@ -340,20 +303,16 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   box-shadow: 0 3px 10px rgba(0,0,0,0.04);
   cursor: pointer;
 }
-
 .student-card.answered {
   border-left-color: var(--moss-green);
 }
-
 .student-card.late {
   border-left-color: #a86b6b;
 }
-
 .student-card:hover {
   transform: translateX(5px);
   box-shadow: 0 5px 15px rgba(0,0,0,0.08);
 }
-
 .question-display {
   min-height: 80px;
   display: flex;
@@ -372,67 +331,56 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   font-size: 1.25rem;
   line-height: 1.5;
 }
-
 .question-display span {
   position: relative;
   z-index: 1;
 }
-
 .copy-success {
   background: rgba(95, 110, 85, 0.15);
   border-color: var(--moss-green);
   color: var(--moss-green);
   box-shadow: 0 0 12px rgba(95, 110, 85, 0.2);
 }
-
 .answer-input-area {
   transition: var(--transition);
   position: relative;
 }
-
 .answer-input-area.submitted {
   transform: scale(0.98);
   opacity: 0.95;
   box-shadow: 0 0 15px rgba(95, 110, 85, 0.2);
 }
-
 .answer-input-area.late {
   border-left: 4px solid #a86b6b;
   box-shadow: 0 0 15px rgba(168, 107, 107, 0.2);
 }
-
 .text-wabi {
   color: var(--clay-brown);
   font-family: 'Noto Serif TC', serif;
   font-weight: 600;
 }
-
 .text-wabi-secondary {
   color: var(--text-secondary);
   font-family: 'Noto Serif TC', serif;
   font-weight: 400;
 }
-
 .icon-shadow {
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.12);
   transition: var(--transition-fast);
 }
-
 .fade-in {
   animation: fadeIn 0.6s ease-out forwards;
 }
-
 @keyframes fadeIn {
-  from { 
-    opacity: 0; 
+  from {
+    opacity: 0;
     transform: translateY(10px);
   }
-  to { 
-    opacity: 1; 
+  to {
+    opacity: 1;
     transform: translateY(0);
   }
 }
-
 .time-input-group {
   display: flex;
   align-items: center;
@@ -443,7 +391,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   padding: 14px 18px;
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
 }
-
 .time-input {
   width: 75px;
   background: transparent;
@@ -457,12 +404,10 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   position: relative;
   z-index: 1;
 }
-
 .time-input:focus {
   outline: none;
   box-shadow: none;
 }
-
 .time-input::after {
   content: '';
   position: absolute;
@@ -475,11 +420,9 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   transition: width 0.3s ease;
   z-index: 0;
 }
-
 .time-input:focus::after {
   width: 80%;
 }
-
 .time-unit {
   color: var(--stone-gray);
   font-weight: 600;
@@ -487,7 +430,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   font-family: 'Noto Serif TC', serif;
   letter-spacing: 0.5px;
 }
-
 .room-code {
   font-family: 'Noto Serif TC', serif;
   font-size: 1.65rem;
@@ -498,7 +440,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   position: relative;
   display: inline-block;
 }
-
 .room-code::after {
   content: '';
   position: absolute;
@@ -509,7 +450,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   background: var(--moss-green);
   opacity: 0.7;
 }
-
 .copyright-footer {
   position: fixed;
   bottom: 12px;
@@ -525,12 +465,10 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   box-shadow: -2px -2px 8px rgba(0,0,0,0.05);
   transition: var(--transition);
 }
-
 .copyright-footer:hover {
   transform: translateX(-3px);
   box-shadow: -3px -3px 12px rgba(0,0,0,0.08);
 }
-
 .host-countdown-container {
   text-align: center;
   padding: 20px;
@@ -545,7 +483,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   position: relative;
   overflow: hidden;
 }
-
 .host-countdown {
   font-family: 'Noto Serif TC', serif;
   font-size: 3.6rem;
@@ -557,14 +494,12 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   z-index: 1;
   line-height: 1;
 }
-
 .time-control-container {
   display: flex;
   flex-direction: column;
   gap: 16px;
   margin-bottom: 8px;
 }
-
 @media (min-width: 768px) {
   .time-control-container {
     flex-direction: row;
@@ -574,7 +509,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
     flex: 1;
   }
 }
-
 .time-button-wrapper {
   display: flex;
   justify-content: flex-end;
@@ -582,7 +516,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   position: relative;
   z-index: 10;
 }
-
 .question-title {
   font-family: 'Noto Serif TC', serif;
   font-size: 1.45rem;
@@ -590,7 +523,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   color: var(--text-primary);
   margin-bottom: 4px;
 }
-
 .time-title {
   font-family: 'Noto Serif TC', serif;
   font-size: 1.15rem;
@@ -598,49 +530,39 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   color: var(--text-secondary);
   margin-bottom: 8px;
 }
-
 #participantsStatus {
   scrollbar-width: thin;
   scrollbar-color: var(--stone-gray) transparent;
 }
-
 #participantsStatus::-webkit-scrollbar {
   width: 6px;
 }
-
 #participantsStatus::-webkit-scrollbar-track {
   background: transparent;
 }
-
 #participantsStatus::-webkit-scrollbar-thumb {
   background-color: var(--stone-gray);
   border-radius: 3px;
 }
-
 #answersList {
   scrollbar-width: thin;
   scrollbar-color: var(--stone-gray) transparent;
 }
-
 #answersList::-webkit-scrollbar {
   width: 6px;
 }
-
 #answersList::-webkit-scrollbar-track {
   background: transparent;
 }
-
 #answersList::-webkit-scrollbar-thumb {
   background-color: var(--stone-gray);
   border-radius: 3px;
 }
-
 .card-header {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-
 .card-icon {
   width: 36px;
   height: 36px;
@@ -651,12 +573,10 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   justify-content: center;
   color: var(--clay-brown);
 }
-
 #submitBtn {
   position: relative;
   overflow: hidden;
 }
-
 #submitBtn::after {
   content: '';
   position: absolute;
@@ -667,11 +587,9 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
   transition: left 0.6s;
 }
-
 #submitBtn:hover::after {
   left: 100%;
 }
-
 .section-header {
   display: flex;
   flex-direction: column;
@@ -679,7 +597,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   text-align: center;
   margin-bottom: 2rem;
 }
-
 .section-title {
   font-family: 'Noto Serif TC', serif;
   font-size: 2.2rem;
@@ -687,20 +604,17 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   color: var(--charcoal);
   margin-bottom: 0.5rem;
 }
-
 .section-subtitle {
   color: var(--text-secondary);
   font-family: 'Noto Serif TC', serif;
   font-size: 1.1rem;
 }
-
 .role-button {
   transition: var(--transition);
   border: 2px solid transparent;
   position: relative;
   overflow: hidden;
 }
-
 .role-button::before {
   content: '';
   position: absolute;
@@ -710,96 +624,78 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   opacity: 0;
   transition: opacity 0.3s ease;
 }
-
 .role-button:hover::before {
   opacity: 1;
 }
-
 .role-button span {
   position: relative;
   z-index: 2;
 }
-
 .role-icon {
   font-size: 2.8rem;
   margin-bottom: 1rem;
   transition: var(--transition);
 }
-
 .role-button:hover .role-icon {
   transform: scale(1.1);
 }
-
 .role-title {
   font-family: ''Noto Serif TC', serif;
   font-size: 1.4rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
 }
-
 .role-desc {
   font-family: 'Noto Serif TC', serif;
   color: var(--text-secondary);
 }
-
 .role-button.primary {
-  background: rgba(138, 118, 99, 0.1); 
+  background: rgba(138, 118, 99, 0.1);
   border: 1px solid rgba(138, 118, 99, 0.3);
 }
-
 .role-button.primary:hover {
-  background: rgba(138, 118, 99, 0.15); 
+  background: rgba(138, 118, 99, 0.15);
   transform: translateY(-5px);
   box-shadow: 0 8px 20px rgba(138, 118, 99, 0.25);
 }
-
 .role-button.primary .role-icon {
-  color: var(--clay-brown); 
+  color: var(--clay-brown);
 }
-
 .role-button.primary .role-title,
 .role-button.primary .role-desc {
-  color: var(--charcoal); 
+  color: var(--charcoal);
 }
-
 @keyframes pulse {
   0% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.05); opacity: 0.9; }
   100% { transform: scale(1); opacity: 1; }
 }
-
 .pulse {
   animation: pulse 2s infinite;
 }
-
 .wabi-sabi-button:hover .icon-shadow {
   transform: scale(1.1);
 }
-
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
 }
-
 @keyframes fadeInScale {
-  from { 
-    opacity: 0; 
+  from {
+    opacity: 0;
     transform: scale(0.95);
   }
-  to { 
-    opacity: 1; 
+  to {
+    opacity: 1;
     transform: scale(1);
   }
 }
-
 .fade-in-scale {
   animation: fadeInScale 0.5s ease-out forwards;
 }
-
 .floating {
   animation: float 3s ease-in-out infinite;
 }
-
 @media (max-width: 768px) {
   .countdown-display {
     font-size: 3.2rem;
@@ -821,7 +717,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
     font-size: 1.1rem;
   }
 }
-
 @media (max-width: 480px) {
   .countdown-display {
     font-size: 2.8rem;
@@ -847,13 +742,12 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
     width: 80px;
   }
 }
-
 .answer-display {
   cursor: text;
   padding-top: 8px;
-  padding-right: 8px; 
+  padding-right: 8px;
   padding-bottom: 8px;
-  padding-left: 8px;  
+  padding-left: 8px;
   border: 1px solid transparent;
   border-radius: 10px;
   transition: var(--transition);
@@ -863,21 +757,18 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   word-wrap: break-word;
   overflow-wrap: break-word;
   outline: none;
-  font-size: 1.3rem; 
-  line-height: 1.8; 
+  font-size: 1.3rem;
+  line-height: 1.8;
 }
-
 .answer-display:hover {
   background-color: rgba(138, 118, 99, 0.05);
   border: 1px dashed rgba(138, 118, 99, 0.3);
 }
-
 .answer-display:focus {
   background-color: var(--earth-beige);
   border: 1px solid var(--clay-brown);
   box-shadow: 0 0 0 2px rgba(138, 118, 99, 0.2);
 }
-
 .editing-indicator {
   position: absolute;
   top: 10px;
@@ -891,20 +782,16 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   opacity: 0;
   transition: opacity 0.3s;
 }
-
 .student-card.editing .editing-indicator {
   opacity: 1;
 }
-
 #fullscreenAnswers {
   transition: opacity 0.3s ease;
   background: var(--paper);
 }
-
 #fullscreenAnswers:not(.hidden) {
   display: flex !important;
 }
-
 .fullscreen-answer-card {
   background: var(--paper);
   border: 1px solid rgba(141, 123, 104, 0.15);
@@ -916,7 +803,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   overflow: hidden;
   cursor: pointer;
 }
-
 .fullscreen-answer-card::before {
   content: '';
   position: absolute;
@@ -927,15 +813,13 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   background: linear-gradient(90deg, var(--moss-green), var(--clay-brown));
   opacity: 0.85;
 }
-
 .fullscreen-answer-card.editing {
   border: 2px solid var(--clay-brown);
   box-shadow: 0 0 20px rgba(138, 118, 99, 0.2);
 }
-
 .fullscreen-toggle-btn {
-  position: static; 
-  margin-left: auto; 
+  position: static;
+  margin-left: auto;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -948,16 +832,14 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   cursor: pointer;
   transition: var(--transition);
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-  flex-shrink: 0; 
+  flex-shrink: 0;
 }
-
 .fullscreen-toggle-btn:hover {
   transform: scale(1.1);
   background: rgba(138, 118, 99, 0.1);
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   color: var(--charcoal);
 }
-
 .answers-header {
   display: flex;
   align-items: center;
@@ -965,62 +847,52 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   margin-bottom: 1rem;
   position: relative;
 }
-
 .answers-title-wrapper {
   display: flex;
   align-items: center;
-  gap: 15px; 
-  flex: 1; 
+  gap: 15px;
+  flex: 1;
 }
-
 #fullscreenToggle {
-  margin-left: 30px; 
-  order: 2; 
+  margin-left: 30px;
+  order: 2;
 }
-
 .font-controls {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto; 
-  order: 1; 
+  margin-left: auto;
+  order: 1;
 }
-
 #answersList {
   position: relative;
 }
-
 #fullscreenAnswers .student-card {
   margin-bottom: 2rem;
   padding: 1.5rem;
   font-size: 1.1rem;
 }
-
 #fullscreenAnswers .answer-display {
   font-size: 1.2rem;
   line-height: 1.8;
   min-height: 150px;
   padding: 1rem;
 }
-
 #fullscreenAnswers .answer-display:hover {
   background-color: rgba(138, 118, 99, 0.05);
   border: 1px dashed rgba(138, 118, 99, 0.3);
 }
-
 #fullscreenAnswers .answer-display:focus {
   background-color: var(--earth-beige);
   border: 1px solid var(--clay-brown);
   box-shadow: 0 0 0 3px rgba(138, 118, 99, 0.2);
 }
-
 .font-controls {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-left: 15px;
 }
-
 .font-btn {
   width: 36px;
   height: 36px;
@@ -1036,63 +908,52 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   font-size: 0.9rem;
   font-weight: bold;
 }
-
 .font-btn:hover {
   background: rgba(138, 118, 99, 0.1);
   transform: scale(1.05);
 }
-
 .font-btn:active {
   transform: scale(0.95);
 }
-
 #fullscreenAnswers .font-controls {
   margin-left: auto;
   margin-right: 15px;
 }
-
 #fullscreenAnswers .font-btn {
   width: 44px;
   height: 44px;
   font-size: 1.1rem;
 }
-
 /* Outline Mode CSS */
 .mode-selector, .outline-options {
   margin-bottom: 15px;
 }
-
 .outline-options label, .mode-selector label {
   margin-right: 15px;
   cursor: pointer;
   font-weight: 500;
   color: var(--charcoal);
 }
-
 .outline-options input[type="radio"], .mode-selector input[type="radio"] {
   margin-right: 5px;
 }
-
 .outline-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
   font-size: 1rem;
 }
-
 .outline-table th, .outline-table td {
   border: 1px solid rgba(141, 123, 104, 0.3);
   padding: 10px;
   text-align: left;
   vertical-align: top;
 }
-
 .outline-table th {
   background: rgba(138, 118, 99, 0.1);
   font-weight: 600;
   color: var(--charcoal);
 }
-
 .outline-table textarea {
   width: 100%;
   background: rgba(255,255,255,0.5);
@@ -1104,14 +965,12 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   font-family: 'Noto Serif TC', serif;
   font-size: 1rem;
 }
-
 .outline-table textarea:focus {
   outline: none;
   border-color: var(--clay-brown);
   background: white;
   box-shadow: 0 0 0 2px rgba(138, 118, 99, 0.1);
 }
-
 .outline-control-btn {
   background: var(--earth-beige);
   border: 1px solid var(--clay-brown);
@@ -1127,12 +986,10 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   transition: all 0.2s;
   font-size: 1rem;
 }
-
 .outline-control-btn:hover {
   background: var(--clay-brown);
   color: white;
 }
-
 /* Style for rendering table in answer card */
 .rendered-outline-table {
   width: 100%;
@@ -1140,22 +997,18 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   margin-top: 5px;
   font-size: 0.9em;
 }
-
 .rendered-outline-table th, .rendered-outline-table td {
   border: 1px solid rgba(138, 118, 99, 0.3);
   padding: 6px;
   vertical-align: top;
 }
-
 .rendered-outline-table th {
   background-color: rgba(138, 118, 99, 0.1);
   font-weight: bold;
 }
-
 #studentInputContainer {
   width: 100%;
 }
-
 .student-config-area {
   margin-bottom: 15px;
   padding: 10px;
@@ -1165,7 +1018,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   align-items: center;
   gap: 10px;
 }
-
 .config-select {
   padding: 8px 12px;
   border-radius: 8px;
@@ -1174,7 +1026,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   font-family: 'Noto Serif TC', serif;
   color: var(--charcoal);
 }
-
   .fullscreen-countdown-pulse {
   animation: countdown-pulse 1s ease-in-out infinite;
 }
@@ -1183,7 +1034,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.05); opacity: 0.9; }
 }
-
 #fullscreenCountdownDisplay {
   font-size: 50vh; /* 佔據60%視口高度，配合容器整體約80% */
   max-height: 70vh;
@@ -1195,7 +1045,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   text-shadow: 0 0 40px rgba(251, 191, 36, 0.8), 0 0 60px rgba(251, 191, 36, 0.6);
   letter-spacing: -0.05em;
 }
-
 /* 在小屏幕上縮小字體 */
 @media (max-width: 768px) {
   #fullscreenCountdownDisplay {
@@ -1205,7 +1054,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
     font-size: 2.5rem;
   }
 }
-
 @media (max-width: 480px) {
   #fullscreenCountdownDisplay {
     font-size: 40vh;
@@ -1215,14 +1063,11 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
     margin-bottom: 0.5rem;
   }
 }
-
 #fullscreenCountdown h2 {
   font-family: 'Noto Serif TC', serif;
   color: rgba(255, 255, 255, 0.85);
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
-
-
 </style>
 </head>
 <body>
@@ -1309,7 +1154,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   <label><input type="radio" name="questionMode" value="qa" checked onclick="toggleMode()"> 問答模式</label>
   <label><input type="radio" name="questionMode" value="outline" onclick="toggleMode()"> 大綱模式</label>
 </div>
-
 <!-- 大綱選項 (隱藏/顯示) -->
 <div id="outlineConfig" class="outline-options hidden p-4 bg-earth-beige rounded-lg border border-gray-200">
   <div class="mb-3">
@@ -1318,7 +1162,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
     <label><input type="radio" name="outlineType" value="argument"> 議論</label>
   </div>
 </div>
-
 <div>
 <label class="block text-base font-medium text-wabi-secondary mb-2.5">問題內容</label>
 <textarea id="questionInput" class="input-field w-full px-4.5 py-3.5 rounded-xl min-h-[110px] resize-y" placeholder="請在此輸入問題..."></textarea>
@@ -1342,7 +1185,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
     </button>
 </div>
 </div>
-
 </div>
 </div>
 </div>
@@ -1481,7 +1323,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
 </div>
 </div>
 </div>
-
 <!-- Modal Structure for Text Editing -->
 <div id="outline-editor-modal" class="outline-modal-overlay">
   <div class="outline-modal-content">
@@ -1493,7 +1334,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
     </div>
   </div>
 </div>
-
 <script>
 const firebaseConfig = {
 apiKey: "AIzaSyB17JKsoCf-H66g13EphV9H7GfR3MreFOo",
@@ -1504,53 +1344,48 @@ storageBucket: "collect-358e3.firebasestorage.app",
 messagingSenderId: "1024060422420",
 appId: "1:1024060422420:web:52dd61dff75c7abc44aa01"
 };
-
 if (!firebase.apps.length) {
 firebase.initializeApp(firebaseConfig);
 }
 const database = firebase.database();
-
 const answerColors = [
-  { border: '#8a7663', bg: 'rgba(138, 118, 99, 0.08)' }, 
-  { border: '#5f6e55', bg: 'rgba(95, 110, 85, 0.08)' }, 
-  { border: '#a86b6b', bg: 'rgba(168, 107, 107, 0.08)' }, 
-  { border: '#7b8a8a', bg: 'rgba(123, 138, 138, 0.08)' }, 
-  { border: '#8a7b65', bg: 'rgba(138, 123, 101, 0.08)' }, 
-  { border: '#658a7b', bg: 'rgba(101, 138, 123, 0.08)' }, 
-  { border: '#8a658a', bg: 'rgba(138, 101, 138, 0.08)' }, 
-  { border: '#8a8a65', bg: 'rgba(138, 138, 101, 0.08)' }  
+  { border: '#8a7663', bg: 'rgba(138, 118, 99, 0.08)' },
+  { border: '#5f6e55', bg: 'rgba(95, 110, 85, 0.08)' },
+  { border: '#a86b6b', bg: 'rgba(168, 107, 107, 0.08)' },
+  { border: '#7b8a8a', bg: 'rgba(123, 138, 138, 0.08)' },
+  { border: '#8a7b65', bg: 'rgba(138, 123, 101, 0.08)' },
+  { border: '#658a7b', bg: 'rgba(101, 138, 123, 0.08)' },
+  { border: '#8a658a', bg: 'rgba(138, 101, 138, 0.08)' },
+  { border: '#8a8a65', bg: 'rgba(138, 138, 101, 0.08)' }
 ];
-
   let fullscreenTimer = null;
 let currentRoom = null;
 let currentUser = null;
 let isHost = false;
 let timer = null; // 這是給學生端使用的
 let hostTimer = null; // 【新增】這是專門給主持人端使用的獨立計時器
-let timeLimit = 600; 
+let timeLimit = 600;
 let remainingTime = 0;
 let roomRef = null;
 let sessionActive = false;
 let lastQuestionStartTime = null;
 let hasSubmitted = false;
-let currentQuestionId = null; 
-
+let currentQuestionId = null;
   // 全局變量
 let isSharingScreen = false;
-
 // 切換畫面同步功能
 async function toggleScreenSharing() {
   if (!isHost || !currentRoom || !sessionActive) return;
-  
+ 
   isSharingScreen = !isSharingScreen;
   const shareScreenBtn = document.getElementById('shareScreenBtn');
   const shareScreenBtnText = document.getElementById('shareScreenBtnText');
-  
+ 
   try {
     await database.ref('class_rooms/' + currentRoom + '/session').update({
       sharingScreen: isSharingScreen
     });
-    
+   
     if (isSharingScreen) {
       shareScreenBtn.classList.remove('secondary');
       shareScreenBtn.classList.add('primary');
@@ -1566,7 +1401,6 @@ async function toggleScreenSharing() {
     alert('切換畫面同步失敗，請重試');
   }
 }
-
 // 顯示同步畫面（學生端）
 function showSharedScreen(roomData) {
   // 隱藏平常的學生答題介面
@@ -1634,8 +1468,8 @@ function showSharedScreen(roomData) {
         <div class="p-4 bg-earth-beige rounded-lg border-l-4" style="border-color: ${studentColor.border}">
           <div class="font-bold flex items-center mb-2">
             ${answer.name}
-            ${isLate ? 
-              '<span class="ml-2 bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full flex items-center"><i class="fas fa-clock mr-1"></i> 超時</span>' : 
+            ${isLate ?
+              '<span class="ml-2 bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full flex items-center"><i class="fas fa-clock mr-1"></i> 超時</span>' :
               '<span class="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full flex items-center"><i class="fas fa-check mr-1"></i> 已提交</span>'}
           </div>
           <div class="mt-2">
@@ -1653,13 +1487,13 @@ function showSharedScreen(roomData) {
     </div>
   `;
   sharedScreenContainer.innerHTML = sharedContent;
-  
+ 
   // 為渲染的表格添加適當樣式
   document.querySelectorAll('.rendered-outline-table').forEach(table => {
     // 確保表格有適當的樣式
     table.style.borderCollapse = 'collapse';
     table.style.minWidth = '800px';
-    
+   
     // 設置表格單元格樣式
     const cells = table.querySelectorAll('td, th');
     cells.forEach(cell => {
@@ -1669,7 +1503,7 @@ function showSharedScreen(roomData) {
       cell.style.fontSize = '1rem';
       cell.style.lineHeight = '1.5';
     });
-    
+   
     // 設置表頭樣式
     const headers = table.querySelectorAll('th');
     headers.forEach(header => {
@@ -1679,7 +1513,6 @@ function showSharedScreen(roomData) {
     });
   });
 }
-
 // 隱藏同步畫面（學生端）
 function hideSharedScreen() {
   const sharedScreenContainer = document.getElementById('sharedScreenContainer');
@@ -1688,23 +1521,20 @@ function hideSharedScreen() {
   }
   document.getElementById('studentSection').classList.remove('hidden');
 }
-
-
 // 增加這個函數在檔案頂部（全域變數區域之後）
 function calibrateTime(serverTimestamp) {
   const localTimestamp = Date.now();
   const timeDiff = serverTimestamp - localTimestamp;
-  
+ 
   // 如果時間差異超過30秒，記錄警告
   if (Math.abs(timeDiff) > 30000) {
     console.warn(`客戶端與伺服器時間差異過大: ${timeDiff}ms`);
     // 在UI上顯示警告
     showTimeSyncWarning(timeDiff);
   }
-  
+ 
   return timeDiff;
 }
-
 function showTimeSyncWarning(timeDiff) {
   // 簡單的警告提示
   const warningDiv = document.createElement('div');
@@ -1719,7 +1549,7 @@ function showTimeSyncWarning(timeDiff) {
     </div>
   `;
   document.body.appendChild(warningDiv);
-  
+ 
   // 5秒後自動移除
   setTimeout(() => {
     warningDiv.style.transition = 'opacity 0.5s';
@@ -1727,13 +1557,10 @@ function showTimeSyncWarning(timeDiff) {
     setTimeout(() => document.body.removeChild(warningDiv), 500);
   }, 5000);
 }
-
-
-  
+ 
 // Student local state for outline configuration
 let studentNarrativeStructure = 'fourPart';
 let studentArgSegments = 3;
-
 function showMainMenu() {
   document.getElementById('mainMenu').classList.remove('hidden');
   document.getElementById('hostSection').classList.add('hidden');
@@ -1743,22 +1570,21 @@ function showMainMenu() {
     roomRef.off();
     roomRef = null;
   }
-  
+ 
   // 清除學生計時器
   if (timer) {
     clearInterval(timer);
     timer = null;
   }
-  
+ 
   // 清除主持人計時器
   if (hostTimer) {
     clearInterval(hostTimer);
     hostTimer = null;
   }
-  
+ 
   document.getElementById('hostCountdownContainer').classList.add('hidden');
 }
-
 function showHostSection() {
 document.getElementById('mainMenu').classList.add('hidden');
 document.getElementById('hostSection').classList.remove('hidden');
@@ -1766,7 +1592,6 @@ document.getElementById('joinSection').classList.add('hidden');
 document.getElementById('studentSection').classList.add('hidden');
 createRoom();
 }
-
 function showJoinSection() {
 document.getElementById('mainMenu').classList.add('hidden');
 document.getElementById('hostSection').classList.add('hidden');
@@ -1778,7 +1603,6 @@ if (roomCode) {
 document.getElementById('joinRoomCode').value = roomCode;
 }
 }
-
 function showStudentSection() {
 document.getElementById('mainMenu').classList.add('hidden');
 document.getElementById('hostSection').classList.add('hidden');
@@ -1788,11 +1612,9 @@ hasSubmitted = false;
 document.getElementById('submissionStatus').classList.add('hidden');
 document.getElementById('answerInputArea').classList.remove('submitted', 'late');
 }
-
 function generateRoomCode() {
 return Math.floor(100000 + Math.random() * 900000).toString();
 }
-
 function generateQRCode(roomCode) {
 const canvas = document.getElementById('qrCanvas');
 const shareUrl = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
@@ -1811,7 +1633,6 @@ alert('QR CODE生成失敗');
 }
 });
 }
-
 function copyShareLink() {
 const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoom}`;
 const copyBtn = document.getElementById('copyLinkBtn');
@@ -1827,7 +1648,6 @@ console.error('複製失敗:', err);
 prompt('請手動複製以下連結:', shareUrl);
 });
 }
-
 function downloadQR() {
 const canvas = document.getElementById('qrCanvas');
 const link = document.createElement('a');
@@ -1835,7 +1655,6 @@ link.download = `wabi-sabi-room-${currentRoom}-qr.png`;
 link.href = canvas.toDataURL();
 link.click();
 }
-
 async function createRoom() {
 try {
 const roomCode = generateRoomCode();
@@ -1848,7 +1667,7 @@ participants: {},
 session: {
 active: false,
 question: "",
-questionId: Date.now(), 
+questionId: Date.now(),
 timeLimit: 600,
 startTime: null,
 endTime: null
@@ -1868,7 +1687,6 @@ console.error('創建房間失敗:', error);
 alert('創建房間失敗,請重試');
 }
 }
-
 async function joinAsStudent() {
 const studentName = document.getElementById('studentName').value.trim();
 const roomCode = document.getElementById('joinRoomCode').value.trim();
@@ -1910,7 +1728,6 @@ console.error('加入房間失敗:', error);
 alert('加入房間失敗,請重試');
 }
 }
-
 function setupRoomListener() {
   if (roomRef) {
     roomRef.off();
@@ -1918,8 +1735,8 @@ function setupRoomListener() {
   roomRef = database.ref('class_rooms/' + currentRoom);
   let updateTimeout = null;
   let lastUpdateTime = 0;
-  const MIN_UPDATE_INTERVAL = 300; 
-  
+  const MIN_UPDATE_INTERVAL = 300;
+ 
   roomRef.on('value', (snapshot) => {
     if (!snapshot.exists()) {
       alert('房間已不存在');
@@ -1927,17 +1744,17 @@ function setupRoomListener() {
       return;
     }
     const roomData = snapshot.val();
-    
+   
     // 時間校準
     if (roomData.session && roomData.session.startTime) {
       calibrateTime(roomData.session.startTime);
     }
-    
+   
     const currentTime = Date.now();
-    const isCriticalUpdate = 
+    const isCriticalUpdate =
       roomData.session?.active !== sessionActive ||
-      !roomData.session?.active; 
-    
+      !roomData.session?.active;
+   
     if (isCriticalUpdate || (currentTime - lastUpdateTime) > MIN_UPDATE_INTERVAL) {
       clearTimeout(updateTimeout);
       performUIUpdate(roomData);
@@ -1947,11 +1764,10 @@ function setupRoomListener() {
       updateTimeout = setTimeout(() => {
         performUIUpdate(roomData);
         lastUpdateTime = Date.now();
-      }, 50); 
+      }, 50);
     }
   });
 }
-
 function performUIUpdate(roomData) {
   updateParticipantCount(roomData.participants);
   if (isHost) {
@@ -1960,9 +1776,7 @@ function performUIUpdate(roomData) {
     updateStudentUI(roomData);
   }
 }
-
-let currentFontSize = 1.3; 
-
+let currentFontSize = 1.3;
 function initializeFontControls() {
   document.querySelectorAll('.increase-font').forEach(btn => {
     btn.addEventListener('click', increaseFontSize);
@@ -1972,21 +1786,18 @@ function initializeFontControls() {
   });
   applyFontSize();
 }
-
 function increaseFontSize() {
-  currentFontSize = Math.min(3.0, currentFontSize + 0.3); 
+  currentFontSize = Math.min(3.0, currentFontSize + 0.3);
   applyFontSize();
 }
-
 function decreaseFontSize() {
-  currentFontSize = Math.max(1.1, currentFontSize - 0.3); 
+  currentFontSize = Math.max(1.1, currentFontSize - 0.3);
   applyFontSize();
 }
-
 function applyFontSize() {
   document.querySelectorAll('.answer-display').forEach(element => {
     element.style.fontSize = `${currentFontSize}rem`;
-    element.style.lineHeight = '1.8'; 
+    element.style.lineHeight = '1.8';
   });
   document.querySelectorAll('#fullscreenAnswers .answer-display').forEach(element => {
     element.style.fontSize = `${currentFontSize * 1.2}rem`;
@@ -1994,15 +1805,13 @@ function applyFontSize() {
   });
   localStorage.setItem('answerFontSize', currentFontSize);
 }
-
 document.addEventListener('DOMContentLoaded', () => {
-
 // 設置全屏倒計時按鈕
 const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
 if (remainingTimeDisplay) {
   remainingTimeDisplay.style.cursor = 'pointer';
   remainingTimeDisplay.title = '點擊放大顯示';
-  
+ 
   remainingTimeDisplay.addEventListener('click', function(e) {
     // 防止點擊觸發父元素事件
     e.stopPropagation();
@@ -2010,22 +1819,18 @@ if (remainingTimeDisplay) {
     openFullscreenCountdown();
   });
 }
-
 // 初始化全屏倒計時按鈕
 const closeFullscreenCountdownBtn = document.getElementById('closeFullscreenCountdown');
 if (closeFullscreenCountdownBtn) {
   closeFullscreenCountdownBtn.addEventListener('click', closeFullscreenCountdown);
 }
-
 // 按ESC鍵關閉全屏
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && !document.getElementById('fullscreenCountdown').classList.contains('hidden')) {
     closeFullscreenCountdown();
   }
 });
-
-
-  
+ 
   const savedFontSize = localStorage.getItem('answerFontSize');
   if (savedFontSize) {
     currentFontSize = parseFloat(savedFontSize);
@@ -2033,44 +1838,42 @@ document.addEventListener('keydown', function(e) {
   initializeFontControls();
   setTimeout(applyFontSize, 100);
 });
-
 function updateParticipantCount(participants) {
   const countElement = document.getElementById('participantCount');
   if (!countElement) return;
-  
+ 
   const newCount = participants ? Object.values(participants).length : 0;
   const currentCount = parseInt(countElement.textContent) || 0;
-  
+ 
   if (newCount !== currentCount) {
     countElement.textContent = newCount;
     updateParticipantsStatus(participants);
   }
 }
-
 function updateParticipantsStatus(participants) {
   const statusElement = document.getElementById('participantsStatus');
   if (!statusElement) return;
-  
+ 
   const currentHTML = statusElement.innerHTML;
   const shouldUpdate = shouldUpdateParticipants(participants, currentHTML);
-  
+ 
   if (!shouldUpdate) return;
-  
+ 
   if (!participants || Object.keys(participants).length === 0) {
     statusElement.innerHTML = '<div class="text-center py-10 text-wabi-secondary">尚未有人加入</div>';
     return;
   }
-  
+ 
   const participantArray = Object.values(participants);
   participantArray.sort((a, b) => (a.joined || 0) - (b.joined || 0));
-  
+ 
   let newHTML = '';
   participantArray.forEach(participant => {
     const statusText = participant.submitted ?
-      (participant.late ? '<span class="text-red-600 font-medium">已提交(超時)</span>' : 
+      (participant.late ? '<span class="text-red-600 font-medium">已提交(超時)</span>' :
                           '<span class="text-moss-green font-medium">已提交</span>') :
       '<span class="text-stone-gray font-medium">未提交</span>';
-    
+   
     newHTML += `
       <div class="flex items-center justify-between p-3.5 rounded-xl bg-earth-beige bg-opacity-40 hover:shadow-md transition-shadow">
         <div class="flex items-center">
@@ -2081,10 +1884,9 @@ function updateParticipantsStatus(participants) {
       </div>
     `;
   });
-  
+ 
   statusElement.innerHTML = newHTML;
 }
-
 function shouldUpdateParticipants(participants, currentHTML) {
   if (!participants || Object.keys(participants).length === 0) {
     return currentHTML.includes('尚未有人加入');
@@ -2093,45 +1895,41 @@ function shouldUpdateParticipants(participants, currentHTML) {
   const currentItemCount = (currentHTML.match(/flex items-center justify-between/g) || []).length;
   return participantCount !== currentItemCount;
 }
-
-
-
 function openFullscreenCountdown() {
   const fullscreenCountdown = document.getElementById('fullscreenCountdown');
   const fullscreenCountdownDisplay = document.getElementById('fullscreenCountdownDisplay');
-  
+ 
   // 設置初始值
   const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
   if (remainingTimeDisplay) {
     fullscreenCountdownDisplay.textContent = remainingTimeDisplay.textContent;
-    
+   
     // 設置脈衝效果
     if (remainingTime <= 5) {
       fullscreenCountdownDisplay.classList.add('fullscreen-countdown-pulse');
     }
   }
-  
+ 
   // 顯示全屏
   fullscreenCountdown.classList.remove('hidden');
   document.body.style.overflow = 'hidden'; // 防止背景滾動
-  
+ 
   // 開始更新計時
   clearInterval(fullscreenTimer);
   fullscreenTimer = setInterval(updateFullscreenCountdown, 100);
 }
-
 function updateFullscreenCountdown() {
   if (!sessionActive) {
     closeFullscreenCountdown();
     return;
   }
-  
+ 
   const fullscreenCountdownDisplay = document.getElementById('fullscreenCountdownDisplay');
   const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
-  
+ 
   if (remainingTimeDisplay && fullscreenCountdownDisplay) {
     fullscreenCountdownDisplay.textContent = remainingTimeDisplay.textContent;
-    
+   
     // 根據剩餘時間更新樣式
     if (remainingTime <= 5) {
       fullscreenCountdownDisplay.style.color = '#ef4444'; // 紅色
@@ -2145,7 +1943,6 @@ function updateFullscreenCountdown() {
     }
   }
 }
-
 function closeFullscreenCountdown() {
   const fullscreenCountdown = document.getElementById('fullscreenCountdown');
   if (fullscreenCountdown) {
@@ -2155,8 +1952,7 @@ function closeFullscreenCountdown() {
   clearInterval(fullscreenTimer);
   fullscreenTimer = null;
 }
-  
-
+ 
 // Host UI Toggle Logic
 function toggleMode() {
   const mode = document.querySelector('input[name="questionMode"]:checked').value;
@@ -2167,20 +1963,19 @@ function toggleMode() {
     outlineConfig.classList.add('hidden');
   }
 }
-
 // Student Configuration Logic
 function renderStudentOutlineUI(type) {
   const container = document.getElementById('studentInputContainer');
   container.innerHTML = '';
-  
+ 
   const configDiv = document.createElement('div');
   configDiv.className = 'student-config-area';
-  
+ 
   if (type === 'narrative') {
     const label = document.createElement('span');
     label.innerText = '選擇結構: ';
     label.className = 'font-bold text-charcoal';
-    
+   
     const select = document.createElement('select');
     select.className = 'config-select';
     select.innerHTML = `
@@ -2191,32 +1986,32 @@ function renderStudentOutlineUI(type) {
       studentNarrativeStructure = e.target.value;
       renderNarrativeTable();
     };
-    
+   
     configDiv.appendChild(label);
     configDiv.appendChild(select);
     container.appendChild(configDiv);
     renderNarrativeTable();
-    
+   
   } else { // argument
     const label = document.createElement('span');
     label.innerText = '結構段數量: ';
     label.className = 'font-bold text-charcoal';
-    
+   
     const minusBtn = document.createElement('button');
     minusBtn.className = 'outline-control-btn';
     minusBtn.innerHTML = '<i class="fas fa-minus"></i>';
     minusBtn.onclick = () => { changeStudentArgSegments(-1); };
-    
+   
     const countSpan = document.createElement('span');
     countSpan.id = 'studentArgCount';
     countSpan.className = 'font-bold text-lg w-6 text-center';
     countSpan.innerText = studentArgSegments;
-    
+   
     const plusBtn = document.createElement('button');
     plusBtn.className = 'outline-control-btn';
     plusBtn.innerHTML = '<i class="fas fa-plus"></i>';
     plusBtn.onclick = () => { changeStudentArgSegments(1); };
-    
+   
     configDiv.appendChild(label);
     configDiv.appendChild(minusBtn);
     configDiv.appendChild(countSpan);
@@ -2225,7 +2020,6 @@ function renderStudentOutlineUI(type) {
     renderArgumentTable();
   }
 }
-
 function changeStudentArgSegments(delta) {
   studentArgSegments += delta;
   if (studentArgSegments < 1) studentArgSegments = 1;
@@ -2233,60 +2027,57 @@ function changeStudentArgSegments(delta) {
   document.getElementById('studentArgCount').innerText = studentArgSegments;
   renderArgumentTable();
 }
-
 function renderNarrativeTable() {
   const container = document.getElementById('studentInputContainer');
   // Remove existing table if any
   const existingTable = container.querySelector('table');
   if (existingTable) existingTable.remove();
-  
+ 
   const table = document.createElement('table');
   table.className = 'outline-table';
-  
+ 
   const thead = document.createElement('thead');
   thead.innerHTML = '<tr><th>部份</th><th>結構段重點</th><th>情節大要</th><th>物象</th></tr>';
   table.appendChild(thead);
-  
+ 
   const tbody = document.createElement('tbody');
   const rows = studentNarrativeStructure === 'fourPart' ? ['起', '承', '轉', '合'] : ['起', '一線', '二線', '三線', '合'];
-  
+ 
   rows.forEach(r => {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${r}</td><td><textarea placeholder="..."></textarea></td><td><textarea placeholder="..."></textarea></td><td><textarea placeholder="..."></textarea></td>`;
     tbody.appendChild(tr);
   });
-  
+ 
   table.appendChild(tbody);
   container.appendChild(table);
 }
-
 function renderArgumentTable() {
   const container = document.getElementById('studentInputContainer');
   const existingTable = container.querySelector('table');
   if (existingTable) existingTable.remove();
-  
+ 
   const table = document.createElement('table');
   table.className = 'outline-table';
-  
+ 
   const thead = document.createElement('thead');
   thead.innerHTML = '<tr><th>部份</th><th>論點</th><th>論據及論證</th></tr>';
   table.appendChild(thead);
-  
+ 
   const tbody = document.createElement('tbody');
   const rows = ['起'];
   for(let i=1; i<=studentArgSegments; i++) rows.push(`結構段${i}`);
   rows.push('合');
-  
+ 
   rows.forEach(r => {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${r}</td><td><textarea placeholder="..."></textarea></td><td><textarea placeholder="..."></textarea></td>`;
     tbody.appendChild(tr);
   });
-  
+ 
   table.appendChild(tbody);
   container.appendChild(table);
 }
-
 function updateStudentUI(roomData) {
   const questionDisplay = document.getElementById('questionDisplay');
   const countdownDisplay = document.getElementById('studentCountdown');
@@ -2302,7 +2093,7 @@ function updateStudentUI(roomData) {
   const currentQID = roomData.session?.questionId ? String(roomData.session.questionId) : null;
   const renderedQID = container.getAttribute('data-qid');
   // 檢查是否需要更新 UI (模式變更、問題 ID 變更、或首次加載)
-  const needsUIUpdate = currentMode !== container.getAttribute('data-mode') || 
+  const needsUIUpdate = currentMode !== container.getAttribute('data-mode') ||
                         currentQID !== renderedQID ||
                         !container.hasChildNodes();
   if (needsUIUpdate && currentQID) {
@@ -2384,7 +2175,6 @@ function updateStudentUI(roomData) {
     timer = null;
     hideSharedScreen(); // 確保關閉共享畫面
   }
-
   // 輔助函數：禁用所有輸入
   function disableAllInputs() {
     const inputs = container.querySelectorAll('textarea, select, button');
@@ -2399,10 +2189,10 @@ function updateStudentUI(roomData) {
   function enableInputsIfNotSubmitted() {
     // 檢查學生是否已針對當前問題提交
     const currentQID = roomData.session?.questionId ? String(roomData.session.questionId) : null;
-    const hasSubmittedCurrentQuestion = 
-      participant.submitted && 
+    const hasSubmittedCurrentQuestion =
+      participant.submitted &&
       String(participant.lastQuestionId) === currentQID;
-      
+     
     if (hasSubmittedCurrentQuestion) {
       // 已提交當前問題
       hasSubmitted = true;
@@ -2442,22 +2232,21 @@ function updateStudentUI(roomData) {
     }
   }
 }
-
 function startLocalTimer(startTime, totalTime) {
   clearInterval(timer);
   lastQuestionStartTime = startTime;
   remainingTime = totalTime;
-  
+ 
   // 增加對startTime的驗證
   const serverTime = Date.now();
   const timeDiff = Math.abs(serverTime - startTime);
-  
+ 
   // 如果時間差超過5分鐘，可能表示客戶端時間不正確，使用伺服器時間重新計算
   if (timeDiff > 300000) {
     console.warn('檢測到客戶端與伺服器時間差異過大，重新校準計時器');
     startTime = serverTime - (totalTime - remainingTime) * 1000;
   }
-  
+ 
   timer = setInterval(() => {
     const currentTime = Date.now();
     // 確保 elapsed 不會是負數
@@ -2465,7 +2254,7 @@ function startLocalTimer(startTime, totalTime) {
     // 確保不會超過總時間
     remainingTime = Math.max(0, Math.min(totalTime, totalTime - elapsed));
     updateCountdownDisplay(remainingTime);
-    
+   
     if (remainingTime <= 0) {
       clearInterval(timer);
       timer = null;
@@ -2483,16 +2272,15 @@ function startLocalTimer(startTime, totalTime) {
       }
     }
   }, 1000);
-  
+ 
   updateCountdownDisplay(remainingTime);
 }
-  
-
+ 
 function updateCountdownDisplay(seconds) {
   const minutes = Math.floor(seconds / 60);
   const secs = seconds % 60;
   const formattedTime = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  
+ 
   // 更新學生介面
   const studentCountdown = document.getElementById('studentCountdown');
   if (studentCountdown) {
@@ -2508,7 +2296,7 @@ function updateCountdownDisplay(seconds) {
       studentCountdown.classList.remove('pulse');
     }
   }
-  
+ 
   // 更新主持人介面 - 新的剩餘時間顯示
   const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
   if (remainingTimeDisplay) {
@@ -2522,13 +2310,7 @@ function updateCountdownDisplay(seconds) {
     }
   }
 }
-
-
-
-
-
-  
-
+ 
 function updateHostUI(roomData) {
   // 更新按鈕狀態
   if (roomData.session.active && roomData.session.startTime) {
@@ -2553,7 +2335,7 @@ function updateHostUI(roomData) {
         startLocalTimer(roomData.session.startTime, totalTime);
       }
     }
-    
+   
     // 更新分享按鈕狀態
     const shareScreenBtn = document.getElementById('shareScreenBtn');
     if (shareScreenBtn) {
@@ -2578,7 +2360,7 @@ function updateHostUI(roomData) {
     remainingTime = roomData.session.timeLimit || timeLimit;
     updateCountdownDisplay(remainingTime);
     document.getElementById('startBtn').innerHTML = '<i class="fas fa-play mr-2"></i>開始';
-    
+   
     // 隱藏分享按鈕
     const shareScreenBtn = document.getElementById('shareScreenBtn');
     if (shareScreenBtn) {
@@ -2606,10 +2388,7 @@ function updateHostUI(roomData) {
     }
   }
 }
-
-
-  
-
+ 
 function getStudentColor(studentName) {
   let hash = 0;
   for (let i = 0; i < studentName.length; i++) {
@@ -2618,15 +2397,14 @@ function getStudentColor(studentName) {
   const index = Math.abs(hash) % answerColors.length;
   return answerColors[index];
 }
-
 function setupDoubleClickEditing(cardElement, studentName) {
   const answerElement = cardElement.querySelector('.answer-display');
   const saveStatus = cardElement.querySelector('.save-status');
-  
-  let originalText = answerElement.innerHTML; 
+ 
+  let originalText = answerElement.innerHTML;
   let saveTimeout = null;
   let isEditing = false;
-  
+ 
   function startEditing() {
     isEditing = true;
     cardElement.classList.add('editing');
@@ -2634,25 +2412,25 @@ function setupDoubleClickEditing(cardElement, studentName) {
     answerElement.contentEditable = "true";
     answerElement.focus();
   }
-  
+ 
   function endEditing() {
     isEditing = false;
     cardElement.classList.remove('editing');
     answerElement.contentEditable = "false";
     autoSave();
   }
-  
+ 
   function autoSave() {
     if (!isEditing) return;
-    const currentText = answerElement.innerHTML; 
+    const currentText = answerElement.innerHTML;
     if (currentText === originalText) return;
-    
+   
     if (saveTimeout) clearTimeout(saveTimeout);
-    
+   
     saveTimeout = setTimeout(async () => {
       try {
         await database.ref(`class_rooms/${currentRoom}/answers/${studentName}`).update({
-          text: currentText 
+          text: currentText
         });
         saveStatus.classList.remove('hidden');
         setTimeout(() => {
@@ -2662,23 +2440,23 @@ function setupDoubleClickEditing(cardElement, studentName) {
       } catch (error) {
         console.error('自動保存失敗:', error);
       }
-    }, 1000); 
+    }, 1000);
   }
-  
+ 
   answerElement.addEventListener('dblclick', () => {
     if (isHost && !isEditing) {
       startEditing();
     }
   });
-  
+ 
   answerElement.addEventListener('blur', () => {
     if (isEditing) {
       endEditing();
     }
   });
-  
+ 
   answerElement.addEventListener('input', autoSave);
-  
+ 
   answerElement.addEventListener('keydown', (e) => {
     if (e.key === 's' && e.ctrlKey) {
       e.preventDefault();
@@ -2693,47 +2471,58 @@ function setupDoubleClickEditing(cardElement, studentName) {
       endEditing();
     }
   });
-  
+ 
   answerElement.title = '雙擊編輯答案，自動保存。按 Ctrl+S 手動保存，按 Escape 取消。';
 }
-
 function setupFullscreenAnswers() {
   const fullscreenContainer = document.getElementById('fullscreenAnswers');
   const closeBtn = document.getElementById('closeFullscreen');
-  
+ 
   closeBtn.addEventListener('click', closeFullscreenAnswers);
-  
+ 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !fullscreenContainer.classList.contains('hidden')) {
       closeFullscreenAnswers();
     }
   });
 }
-
 function openFullscreenAnswers(answers, participants) {
   const fullscreenContainer = document.getElementById('fullscreenAnswers');
   const answersList = document.getElementById('fullscreenAnswersList');
-  
   document.getElementById('hostSection').classList.add('hidden');
-  
+ 
+  const drawingCanvasContainer = document.getElementById('drawingCanvasContainer');
+  const drawingCanvas = document.getElementById('drawingCanvas');
+ 
   if (!answers || Object.keys(answers).length === 0) {
     answersList.innerHTML = '<div class="text-center py-20 text-wabi-secondary text-xl">尚未有回答</div>';
   } else {
     answersList.innerHTML = generateFullscreenAnswersHTML(answers, participants);
     setupFullscreenEditing(answers, participants);
   }
-  
+ 
+  // 重置並顯示canvas
+  const drawingCtx = drawingCanvas.getContext('2d');
+  drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+  drawingCanvasContainer.classList.add('hidden');
+  document.getElementById('drawingTools').classList.add('hidden');
+ 
   fullscreenContainer.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
+ 
+  // 調整canvas大小
+  setTimeout(() => {
+    const container = document.getElementById('fullscreenAnswers');
+    drawingCanvas.width = container.clientWidth;
+    drawingCanvas.height = container.clientHeight;
+  }, 300);
 }
-
 function closeFullscreenAnswers() {
   const fullscreenContainer = document.getElementById('fullscreenAnswers');
   fullscreenContainer.classList.add('hidden');
   document.body.style.overflow = '';
   document.getElementById('hostSection').classList.remove('hidden');
 }
-
 function generateFullscreenAnswersHTML(answers, participants) {
   const answersArray = Object.entries(answers)
     .map(([name, answerData]) => ({
@@ -2741,14 +2530,13 @@ function generateFullscreenAnswersHTML(answers, participants) {
       ...answerData
     }))
     .sort((a, b) => a.timestamp - b.timestamp);
-
   let html = '';
-  
+ 
   answersArray.forEach((answer, index) => {
     const participant = participants[answer.name] || {};
     const isLate = participant.late || false;
     const studentColor = getStudentColor(answer.name);
-    
+   
     const timestamp = new Date(answer.timestamp);
     const timeString = timestamp.toLocaleTimeString([], {
       hour: '2-digit',
@@ -2756,15 +2544,15 @@ function generateFullscreenAnswersHTML(answers, participants) {
       second: '2-digit',
       hour12: false
     });
-    
+   
     // Use text directly as HTML for tables, or replace newlines for text
     let displayContent = answer.text;
     if (!displayContent.includes('<table')) {
        displayContent = displayContent.replace(/\n/g, '<br>');
     }
-    
+   
     html += `
-      <div class="fullscreen-answer-card student-card p-6 rounded-xl ${isLate ? 'late' : 'answered'} fade-in" 
+      <div class="fullscreen-answer-card student-card p-6 rounded-xl ${isLate ? 'late' : 'answered'} fade-in"
            data-student="${answer.name}"
            style="border-color: ${studentColor.border}; background-color: ${studentColor.bg};">
         <div class="editing-indicator">
@@ -2779,24 +2567,23 @@ function generateFullscreenAnswersHTML(answers, participants) {
             ${timeString} ${isLate ? '(超時)' : ''}
           </div>
         </div>
-        
-        <div class="answer-display mt-4 text-left text-xl" 
-             data-student="${answer.name}" 
+       
+        <div class="answer-display mt-4 text-left text-xl"
+             data-student="${answer.name}"
              contenteditable="false"
              spellcheck="false">
           ${displayContent}
         </div>
-        
+       
         <div class="save-status text-sm text-wabi-secondary mt-3 text-right hidden">
           <i class="fas fa-save mr-1"></i>已自動保存
         </div>
       </div>
     `;
   });
-  
+ 
   return html;
 }
-
 function setupFullscreenEditing(answers, participants) {
   const answerCards = document.querySelectorAll('.fullscreen-answer-card');
   answerCards.forEach(card => {
@@ -2804,43 +2591,39 @@ function setupFullscreenEditing(answers, participants) {
     setupDoubleClickEditing(card, studentName);
   });
 }
-
 function updateAnswersList(answers, participants) {
   const answersList = document.getElementById('answersList');
   const currentAnswers = JSON.stringify(answers || {});
   const lastAnswers = answersList.getAttribute('data-last-answers') || '{}';
-  
+ 
   if (currentAnswers === lastAnswers) return;
   answersList.setAttribute('data-last-answers', currentAnswers);
   answersList.innerHTML = '';
-  
+ 
   if (!sessionActive) {
     answersList.innerHTML += '<div class="text-center py-12 text-wabi-secondary">尚未開始</div>';
     return;
   }
-  
+ 
   if (!answers || Object.keys(answers).length === 0) {
     answersList.innerHTML += '<div class="text-center py-12 text-wabi-secondary">尚未有回答</div>';
     return;
   }
-
   const answersArray = Object.entries(answers)
     .map(([name, answerData]) => ({
       name,
       ...answerData
     }))
     .sort((a, b) => a.timestamp - b.timestamp);
-
   answersArray.forEach((answer, index) => {
     const participant = participants[answer.name] || {};
     const isLate = participant.late || false;
     const studentColor = getStudentColor(answer.name);
-    
+   
     const div = document.createElement('div');
     div.className = `student-card p-5 rounded-xl ${isLate ? 'late' : 'answered'} fade-in`;
     div.style.borderColor = studentColor.border;
     div.style.backgroundColor = studentColor.bg;
-
     const timestamp = new Date(answer.timestamp);
     const timeString = timestamp.toLocaleTimeString([], {
       hour: '2-digit',
@@ -2848,14 +2631,13 @@ function updateAnswersList(answers, participants) {
       second: '2-digit',
       hour12: false
     });
-
     // Check if answer is an HTML table or plain text
     let displayContent = answer.text;
     if (!displayContent.includes('<table')) {
        // If strictly text, convert newlines to <br>
        displayContent = displayContent.replace(/\n/g, '<br>');
     }
-    
+   
     div.innerHTML = `
       <div class="editing-indicator">
         <i class="fas fa-edit mr-1"></i>編輯中
@@ -2869,26 +2651,25 @@ function updateAnswersList(answers, participants) {
           ${timeString} ${isLate ? '(超時)' : ''}
         </div>
       </div>
-      
-      <div class="answer-display mt-3 text-left text-base" 
-           data-student="${answer.name}" 
+     
+      <div class="answer-display mt-3 text-left text-base"
+           data-student="${answer.name}"
            contenteditable="false"
            spellcheck="false">
         ${displayContent}
       </div>
-      
+     
       <div class="save-status text-xs text-wabi-secondary mt-2 text-right hidden">
         <i class="fas fa-save mr-1"></i>已自動保存
       </div>
     `;
-    
+   
     answersList.appendChild(div);
     if (isHost) {
       setupDoubleClickEditing(div, answer.name);
     }
   });
 }
-
 async function startSession() {
   if (!isHost || !currentRoom) return;
   const question = document.getElementById('questionInput').value.trim();
@@ -2943,7 +2724,7 @@ async function startSession() {
     // 獲取伺服器時間以確保準確性
     const serverTime = Date.now();
     await database.ref('class_rooms/' + currentRoom).update({
-      answers: {}, 
+      answers: {},
       session: {
         active: true,
         question: question,
@@ -2977,18 +2758,15 @@ async function startSession() {
     updateCountdownDisplay(remainingTime);
   }
 }
-
-
-  
+ 
 async function endSession() {
-
  // 關閉全屏倒計時
   if (fullscreenTimer) {
     clearInterval(fullscreenTimer);
     fullscreenTimer = null;
     closeFullscreenCountdown();
   }
-  
+ 
   if (!isHost || !currentRoom) return;
   // 清除計時器
   if (timer) {
@@ -3004,17 +2782,14 @@ async function endSession() {
   remainingTime = timeLimit;
   updateCountdownDisplay(remainingTime);
 }
-
 async function clearSession() {
-
   // 關閉全屏倒計時
   if (fullscreenTimer) {
     clearInterval(fullscreenTimer);
     fullscreenTimer = null;
     closeFullscreenCountdown();
   }
-
-  
+ 
   if (!isHost || !currentRoom) return;
   // 清除計時器
   if (timer) {
@@ -3026,7 +2801,7 @@ async function clearSession() {
     session: {
       active: false,
       question: "",
-      questionId: Date.now(), 
+      questionId: Date.now(),
       timeLimit: 600,
       startTime: null,
       endTime: null
@@ -3052,22 +2827,20 @@ async function clearSession() {
   document.getElementById('minutesInput').value = '10';
   document.getElementById('secondsInput').value = '0';
 }
-
-
-  
+ 
 async function submitAnswer() {
   if (!currentRoom || !currentUser || isHost || hasSubmitted) return;
-  
+ 
   let answerText = '';
   const container = document.getElementById('studentInputContainer');
   const table = container.querySelector('table');
-  
+ 
   if (table) {
     // Format Table Inputs into HTML string
     const clonedTable = table.cloneNode(true);
     const textareas = table.querySelectorAll('textarea');
     const clonedCells = clonedTable.querySelectorAll('textarea');
-    
+   
     // Convert textarea values to text/html inside cell
     for (let i = 0; i < textareas.length; i++) {
         const val = textareas[i].value || '';
@@ -3075,14 +2848,13 @@ async function submitAnswer() {
         // Replace textarea with div or simple text
         parent.innerHTML = val.replace(/\n/g, '<br>');
     }
-    
+   
     // Add styles to ensure it looks good on host side
     clonedTable.classList.add('rendered-outline-table');
     answerText = clonedTable.outerHTML;
   } else {
     answerText = document.getElementById('studentAnswer').value.trim();
   }
-
   // Standard checks on content existence (simple check)
   if (table) {
      let hasContent = false;
@@ -3091,7 +2863,6 @@ async function submitAnswer() {
   } else {
      if(!answerText) { alert('請輸入答案'); return; }
   }
-
   try {
     const roomSnapshot = await database.ref('class_rooms/' + currentRoom).once('value');
     const roomData = roomSnapshot.val();
@@ -3102,37 +2873,33 @@ async function submitAnswer() {
       const elapsed = Math.floor((currentTime - startTime) / 1000);
       isLate = elapsed > roomData.session.timeLimit;
     }
-
     if (remainingTime <= 0) {
       alert('時間已到,無法提交答案');
       return;
     }
-
     const answerData = {
       text: answerText,
       timestamp: firebase.database.ServerValue.TIMESTAMP,
       late: isLate
     };
     await database.ref('class_rooms/' + currentRoom + '/answers/' + currentUser).set(answerData);
-
     await database.ref('class_rooms/' + currentRoom + '/participants/' + currentUser).update({
       submitted: true,
       late: isLate,
       lastQuestionId: roomData.session.questionId
     });
-
     hasSubmitted = true;
     const submissionStatus = document.getElementById('submissionStatus');
     const answerInputArea = document.getElementById('answerInputArea');
     submissionStatus.classList.remove('hidden');
-    
+   
     // Disable inputs
     if(table) {
        container.querySelectorAll('textarea').forEach(t => t.disabled = true);
     } else {
        document.getElementById('studentAnswer').disabled = true;
     }
-    
+   
     document.getElementById('submitBtn').classList.add('hidden');
     answerInputArea.classList.add('submitted');
     // 顯示下載按鈕
@@ -3146,8 +2913,6 @@ async function submitAnswer() {
     alert('提交答案失敗,請重試');
   }
 }
-
-
 // 生成並下載HTML文件
 function downloadHTML(content, filename) {
     const blob = new Blob([content], {type: 'text/html'});
@@ -3162,15 +2927,14 @@ function downloadHTML(content, filename) {
         URL.revokeObjectURL(url);
     }, 0);
 }
-
 // 下載所有回答 (主持人使用)
 function downloadAllAnswers() {
     if (!isHost || !currentRoom) return;
-    
+   
     database.ref('class_rooms/' + currentRoom).once('value').then(snapshot => {
         const roomData = snapshot.val();
         if (!roomData || !roomData.answers) return;
-        
+       
         // 構建HTML內容
         let htmlContent = `
 <!DOCTYPE html>
@@ -3186,7 +2950,7 @@ function downloadAllAnswers() {
         .timestamp { color: #888; margin-bottom: 15px; }
         .answer-content { margin-top: 15px; }
         .rendered-outline-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .rendered-outline-table th, .rendered-outline-table td { 
+        .rendered-outline-table th, .rendered-outline-table td {
             border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: top;
         }
         .rendered-outline-table th { background-color: #f5f5f5; font-weight: bold; }
@@ -3207,26 +2971,26 @@ function downloadAllAnswers() {
     </div>
     <hr style="margin: 30px 0;">
         `;
-        
+       
         // 獲取答案並按照時間排序
         const answersArray = Object.entries(roomData.answers)
-            .map(([name, answerData]) => ({ 
-                name, 
+            .map(([name, answerData]) => ({
+                name,
                 ...answerData,
                 late: roomData.participants?.[name]?.late || false
             }))
             .sort((a, b) => a.timestamp - b.timestamp);
-            
+           
         answersArray.forEach((answer, index) => {
             const timestamp = new Date(answer.timestamp);
             const timeString = timestamp.toLocaleString('zh-TW');
-            
+           
             htmlContent += `
             <div class="answer-card">
                 <div class="student-name">
-                    ${answer.name} 
-                    ${answer.late ? 
-                        '<span class="late-tag"><i class="fas fa-clock mr-1"></i>超時</span>' : 
+                    ${answer.name}
+                    ${answer.late ?
+                        '<span class="late-tag"><i class="fas fa-clock mr-1"></i>超時</span>' :
                         '<span class="normal-tag"><i class="fas fa-check mr-1"></i>已提交</span>'
                     }
                 </div>
@@ -3237,12 +3001,12 @@ function downloadAllAnswers() {
             </div>
             `;
         });
-        
+       
         htmlContent += `
 </body>
 </html>
         `;
-        
+       
         // 下載文件
         downloadHTML(htmlContent, `脈問堂_回答列表_${currentRoom}_${new Date().toISOString().slice(0,10)}.html`);
     }).catch(error => {
@@ -3250,11 +3014,10 @@ function downloadAllAnswers() {
         alert('下載回答失敗，請重試');
     });
 }
-
 // 下載我的回答 (學生使用)
 function downloadMyAnswer() {
     if (isHost || !currentRoom || !currentUser) return;
-    
+   
     Promise.all([
         database.ref(`class_rooms/${currentRoom}/answers/${currentUser}`).once('value'),
         database.ref(`class_rooms/${currentRoom}/session`).once('value'),
@@ -3263,15 +3026,15 @@ function downloadMyAnswer() {
         const answerData = answerSnapshot.val();
         const sessionData = sessionSnapshot.val();
         const participantData = participantSnapshot.val();
-        
+       
         if (!answerData) {
             alert('沒有可下載的回答');
             return;
         }
-        
+       
         const question = sessionData?.question || '無';
         const isLate = participantData?.late || false;
-        
+       
         // 構建HTML內容
         let htmlContent = `
 <!DOCTYPE html>
@@ -3289,7 +3052,7 @@ function downloadMyAnswer() {
         .student-name { font-size: 1.5em; font-weight: bold; color: #8a7663; margin-bottom: 5px; }
         .timestamp { color: #888; margin-bottom: 20px; }
         .rendered-outline-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .rendered-outline-table th, .rendered-outline-table td { 
+        .rendered-outline-table th, .rendered-outline-table td {
             border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: top;
         }
         .rendered-outline-table th { background-color: #f5f5f5; font-weight: bold; }
@@ -3307,17 +3070,17 @@ function downloadMyAnswer() {
             <p><strong>導出時間:</strong> ${new Date().toLocaleString('zh-TW')}</p>
         </div>
     </div>
-    
+   
     <div class="question">
         <div class="question-title">問題內容</div>
         <p>${question}</p>
     </div>
-    
+   
     <div class="my-answer">
         <div class="student-name">${currentUser}</div>
         <div class="timestamp">提交時間: ${new Date(answerData.timestamp).toLocaleString('zh-TW')}</div>
-        ${isLate ? 
-            '<span class="late-tag"><i class="fas fa-clock mr-1"></i>超時提交</span>' : 
+        ${isLate ?
+            '<span class="late-tag"><i class="fas fa-clock mr-1"></i>超時提交</span>' :
             '<span class="normal-tag"><i class="fas fa-check mr-1"></i>按時提交</span>'
         }
         <div style="margin-top: 20px;">
@@ -3327,7 +3090,7 @@ function downloadMyAnswer() {
 </body>
 </html>
         `;
-        
+       
         // 下載文件
         downloadHTML(htmlContent, `脈問堂_我的回答_${currentUser}_${new Date().toISOString().slice(0,10)}.html`);
     }).catch(error => {
@@ -3335,19 +3098,182 @@ function downloadMyAnswer() {
         alert('下載回答失敗，請重試');
     });
 }
-
-
-
-
+// 初始化繪圖工具
+function initDrawingTools() {
+  const drawingCanvas = document.getElementById('drawingCanvas');
+  const drawingContext = drawingCanvas.getContext('2d');
+  const drawingCanvasContainer = document.getElementById('drawingCanvasContainer');
+  const drawingTools = document.getElementById('drawingTools');
+  const toggleDrawingToolsBtn = document.getElementById('toggleDrawingTools');
+ 
+  // 設置canvas尺寸
+  function resizeCanvas() {
+    const container = document.getElementById('fullscreenAnswers');
+    drawingCanvas.width = container.clientWidth;
+    drawingCanvas.height = container.clientHeight;
+    drawingContext.lineCap = 'round';
+    drawingContext.lineJoin = 'round';
+  }
+ 
+  // 初始化繪圖狀態
+  let isDrawing = false;
+  let lastX = 0;
+  let lastY = 0;
+  let currentColor = 'rgba(255, 0, 0, 0.8)'; // 預設紅色
+  let brushSize = 5;
+  let isEraser = false;
+ 
+  // 設定canvas樣式
+  drawingCanvas.style.position = 'absolute';
+  drawingCanvas.style.top = '0';
+  drawingCanvas.style.left = '0';
+  drawingCanvas.style.pointerEvents = 'none';
+ 
+  // 調整canvas大小
+  window.addEventListener('resize', resizeCanvas);
+ 
+  // 工具按鈕事件
+  toggleDrawingToolsBtn.addEventListener('click', () => {
+    drawingCanvasContainer.classList.toggle('hidden');
+    drawingTools.classList.toggle('hidden');
+    if (!drawingCanvasContainer.classList.contains('hidden')) {
+      resizeCanvas();
+    }
+  });
+ 
+  document.getElementById('redPenBtn').addEventListener('click', () => {
+    currentColor = 'rgba(255, 0, 0, 0.8)';
+    isEraser = false;
+    document.getElementById('redPenBtn').classList.add('border-2', 'border-red-700');
+    document.getElementById('eraserBtn').classList.remove('border-2', 'border-gray-700');
+  });
+ 
+  document.getElementById('eraserBtn').addEventListener('click', () => {
+    isEraser = true;
+    document.getElementById('redPenBtn').classList.remove('border-2', 'border-red-700');
+    document.getElementById('eraserBtn').classList.add('border-2', 'border-gray-700');
+  });
+ 
+  document.getElementById('clearCanvasBtn').addEventListener('click', () => {
+    if (confirm('確定要清除所有批註嗎？')) {
+      clearCanvas();
+    }
+  });
+ 
+  document.getElementById('brushSize').addEventListener('input', (e) => {
+    brushSize = parseInt(e.target.value);
+  });
+ 
+  // 繪圖功能
+  function startDrawing(e) {
+    if (drawingCanvasContainer.classList.contains('hidden')) return;
+   
+    isDrawing = true;
+    const rect = drawingCanvas.getBoundingClientRect();
+    lastX = (e.clientX || e.touches[0].clientX) - rect.left;
+    lastY = (e.clientY || e.touches[0].clientY) - rect.top;
+   
+    // 點擊時繪製一個點
+    drawingContext.beginPath();
+    drawingContext.arc(lastX, lastY, brushSize/2, 0, Math.PI * 2);
+    drawingContext.fillStyle = currentColor;
+    drawingContext.fill();
+  }
+ 
+  function draw(e) {
+    if (!isDrawing) return;
+    e.preventDefault();
+   
+    const rect = drawingCanvas.getBoundingClientRect();
+    const currentX = (e.clientX || e.touches[0].clientX) - rect.left;
+    const currentY = (e.clientY || e.touches[0].clientY) - rect.top;
+   
+    drawingContext.beginPath();
+    drawingContext.moveTo(lastX, lastY);
+    drawingContext.lineTo(currentX, currentY);
+   
+    if (isEraser) {
+      drawingContext.globalCompositeOperation = 'destination-out';
+      drawingContext.strokeStyle = 'rgba(0,0,0,1)';
+    } else {
+      drawingContext.globalCompositeOperation = 'source-over';
+      drawingContext.strokeStyle = currentColor;
+    }
+   
+    drawingContext.lineWidth = brushSize;
+    drawingContext.stroke();
+   
+    lastX = currentX;
+    lastY = currentY;
+  }
+ 
+  function stopDrawing() {
+    isDrawing = false;
+  }
+ 
+  // 清除canvas
+  function clearCanvas() {
+    drawingContext.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+  }
+ 
+  // 設置事件監聽
+  drawingCanvas.addEventListener('mousedown', startDrawing);
+  drawingCanvas.addEventListener('mousemove', draw);
+  drawingCanvas.addEventListener('mouseup', stopDrawing);
+  drawingCanvas.addEventListener('mouseout', stopDrawing);
+ 
+  // 觸控事件
+  drawingCanvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      startDrawing(e.touches[0]);
+    }
+  });
+ 
+  drawingCanvas.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1) {
+      draw(e.touches[0]);
+    }
+  });
+ 
+  drawingCanvas.addEventListener('touchend', stopDrawing);
+  drawingCanvas.addEventListener('touchcancel', stopDrawing);
+ 
+  // 全屏滾動時更新canvas位置
+  const answersList = document.getElementById('fullscreenAnswersList');
+  answersList.addEventListener('scroll', () => {
+    if (!drawingCanvasContainer.classList.contains('hidden')) {
+      drawingCanvasContainer.style.top = `${answersList.scrollTop}px`;
+    }
+  });
+ 
+  // 當進入全屏時調整canvas
+  document.getElementById('fullscreenToggle').addEventListener('click', () => {
+    setTimeout(() => {
+      if (!document.getElementById('fullscreenAnswers').classList.contains('hidden')) {
+        resizeCanvas();
+      }
+    }, 300);
+  });
+ 
+  // 當關閉全屏時重置canvas
+  document.getElementById('closeFullscreen').addEventListener('click', () => {
+    clearCanvas();
+    drawingCanvasContainer.classList.add('hidden');
+    drawingTools.classList.add('hidden');
+  });
+ 
+  // 初始隱藏工具
+  drawingCanvasContainer.classList.add('hidden');
+  drawingTools.classList.add('hidden');
+}
 async function leaveHost() {
-
  // 關閉全屏倒計時
   if (fullscreenTimer) {
     clearInterval(fullscreenTimer);
     fullscreenTimer = null;
     closeFullscreenCountdown();
   }
-  
+ 
   if (roomRef) {
     roomRef.off();
     roomRef = null;
@@ -3355,7 +3281,7 @@ async function leaveHost() {
   if (currentRoom) {
     await database.ref('class_rooms/' + currentRoom).remove();
   }
-  
+ 
   // 清除所有計時器
   if (hostTimer) {
     clearInterval(hostTimer);
@@ -3365,7 +3291,7 @@ async function leaveHost() {
     clearInterval(timer);
     timer = null;
   }
-  
+ 
   sessionActive = false;
   document.getElementById('hostCountdownContainer').classList.add('hidden');
   currentRoom = null;
@@ -3373,19 +3299,15 @@ async function leaveHost() {
   isHost = false;
   showMainMenu();
 }
-
-
-
-  
+ 
 async function leaveStudent() {
-
  // 關閉全屏倒計時
   if (fullscreenTimer) {
     clearInterval(fullscreenTimer);
     fullscreenTimer = null;
     closeFullscreenCountdown();
   }
-  
+ 
 if (roomRef) {
 roomRef.off();
 roomRef = null;
@@ -3402,33 +3324,28 @@ isHost = false;
 hasSubmitted = false;
 showMainMenu();
 }
-
 // Modal Logic
 let currentEditingElement = null;
 const modal = document.getElementById('outline-editor-modal');
 const modalTextarea = document.getElementById('modal-textarea');
 const modalSaveBtn = document.getElementById('modal-save-btn');
 const modalCloseBtn = document.getElementById('modal-close-btn');
-
 function openModalEditor(element) {
     currentEditingElement = element;
     modalTextarea.value = element.value;
     modal.style.display = 'flex';
     modalTextarea.focus();
 }
-
 function closeModalEditor() {
     modal.style.display = 'none';
     currentEditingElement = null;
 }
-
 function saveAndCloseEditor() {
     if (currentEditingElement) {
         currentEditingElement.value = modalTextarea.value;
     }
     closeModalEditor();
 }
-
 document.body.addEventListener('click', function(event) {
     const target = event.target;
     if (target.tagName === 'TEXTAREA' && !target.classList.contains('no-modal-editor') && target.id !== 'modal-textarea' && target.id !== 'questionInput') {
@@ -3437,19 +3354,16 @@ document.body.addEventListener('click', function(event) {
         if(!isHost || target.id === 'questionInput') { // Let host edit question too
              // Actually, prompt says "Student clicks input", but good UX applies to all small textareas
         }
-        
+       
         // Specifically for student section textareas
         if(document.getElementById('studentSection').contains(target)) {
              openModalEditor(target);
         }
     }
 });
-
 modalSaveBtn.addEventListener('click', saveAndCloseEditor);
 modalCloseBtn.addEventListener('click', closeModalEditor);
-
 // End Modal Logic
-
 window.addEventListener('beforeunload', () => {
   clearInterval(timer);
   timer = null;
@@ -3461,11 +3375,10 @@ window.addEventListener('beforeunload', () => {
     }
   }
 });
-
 document.addEventListener('DOMContentLoaded', () => {
   timer = null;
   setupFullscreenAnswers();
-  
+  initDrawingTools();
   const studentAnswer = document.getElementById('studentAnswer');
   if (studentAnswer) {
     studentAnswer.addEventListener('input', function() {
@@ -3475,7 +3388,6 @@ document.addEventListener('DOMContentLoaded', () => {
     studentAnswer.style.height = 'auto';
     studentAnswer.style.height = studentAnswer.scrollHeight + 'px';
   }
-   
   const urlParams = new URLSearchParams(window.location.search);
   const roomCode = urlParams.get('room');
   if (roomCode && roomCode.length === 6) {
@@ -3485,7 +3397,6 @@ document.addEventListener('DOMContentLoaded', () => {
     showMainMenu();
   }
 });
-
 document.getElementById('fullscreenToggle').addEventListener('click', function() {
   if (!currentRoom) return;
   const roomRef = database.ref('class_rooms/' + currentRoom);
@@ -3498,13 +3409,11 @@ document.getElementById('fullscreenToggle').addEventListener('click', function()
     console.error('獲取全屏數據失敗:', error);
   });
 });
-
 </script>
 <footer class="copyright-footer">
 <p>Copyright © 2025 陳冠健. All rights reserved.</p>
 </footer>
-
-<!-- 全屏回答檢視 -->
+<!-- 替換全屏回答檢視的HTML部分 -->
 <div id="fullscreenAnswers" class="fixed inset-0 bg-paper z-50 hidden flex flex-col">
   <!-- 頂部工具欄 -->
   <div class="bg-paper border-b border-stone-gray border-opacity-20 p-4 flex justify-between items-center shadow-sm">
@@ -3521,6 +3430,10 @@ document.getElementById('fullscreenToggle').addEventListener('click', function()
         <button class="font-btn increase-font" title="放大字體">
           <i class="fas fa-font"></i><i class="fas fa-plus" style="font-size: 0.6em; margin-left: -2px;"></i>
         </button>
+        <!-- 新增繪圖工具開關 -->
+        <button id="toggleDrawingTools" class="font-btn" title="顯示/隱藏批註工具">
+          <i class="fas fa-pencil-alt"></i>
+        </button>
         <!-- 關閉按鈕 -->
         <button id="closeFullscreen" class="fullscreen-toggle-btn" title="關閉全屏">
           <i class="fas fa-times"></i>
@@ -3528,14 +3441,50 @@ document.getElementById('fullscreenToggle').addEventListener('click', function()
       </div>
     </div>
   </div>
- 
+  <!-- 繪圖Canvas覆蓋層 -->
+  <div id="drawingCanvasContainer" class="fixed inset-0 pointer-events-none z-40 hidden">
+    <canvas id="drawingCanvas" class="absolute inset-0 w-full h-full"></canvas>
+  </div>
+  <!-- 繪圖工具面板 -->
+  <div id="drawingTools" class="fixed bottom-6 right-6 z-50 bg-paper p-3 rounded-xl shadow-lg border border-stone-gray hidden">
+    <div class="flex flex-col gap-3">
+      <button id="redPenBtn" class="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white shadow-md hover:bg-red-600 active:scale-95 transition-transform border-2 border-red-700">
+        <i class="fas fa-pen"></i>
+      </button>
+      <button id="eraserBtn" class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 shadow-md hover:bg-gray-400 active:scale-95 transition-transform border-2 border-gray-400">
+        <i class="fas fa-eraser"></i>
+      </button>
+      <button id="clearCanvasBtn" class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 shadow-md hover:bg-gray-300 active:scale-95 transition-transform border-2 border-gray-300">
+        <i class="fas fa-trash"></i>
+      </button>
+  <div class="mt-2">
+  <button id="brushSize" class="w-12 h-12 rounded-full bg-earth-beige border-2 border-clay-brown/40 text-charcoal font-bold text-lg hover:border-clay-brown transition"
+          data-sizes="[1,3,5,8,12,20,30,50]" data-value="5">
+    5
+  </button>
+</div>
+
+<script>
+  document.getElementById('brushSize')?.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const sizes = JSON.parse(this.dataset.sizes);
+    const current = parseInt(this.dataset.value);
+    const nextIndex = (sizes.indexOf(current) + 1) % sizes.length;
+    const newSize = sizes[nextIndex];
+    this.dataset.value = newSize;
+    this.textContent = newSize;
+    // 同步到你的繪圖變數
+    if (window.setBrushSize) window.setBrushSize(newSize);
+    else if (window.drawingContext) window.currentBrushSize = newSize;
+  });
+</script>
+    </div>
+  </div>
   <!-- 回答列表容器 -->
-  <div id="fullscreenAnswersList" class="flex-1 overflow-y-auto p-6 bg-earth-beige">
+  <div id="fullscreenAnswersList" class="flex-1 overflow-y-auto p-6 bg-earth-beige relative z-30">
     <!-- 回答將在這裡動態生成 -->
   </div>
 </div>
-
-
 <!-- 替換全屏倒計時HTML -->
 <div id="fullscreenCountdown" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
   <div class="w-full h-full flex flex-col justify-center items-center px-8">
@@ -3546,7 +3495,7 @@ document.getElementById('fullscreenToggle').addEventListener('click', function()
     <i class="fas fa-times"></i>
   </button>
 </div>
-  
-    
+ 
+   
 </body>
 </html>
