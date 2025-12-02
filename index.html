@@ -1526,6 +1526,47 @@ let lastQuestionStartTime = null;
 let hasSubmitted = false;
 let currentQuestionId = null; 
 
+
+// 增加這個函數在檔案頂部（全域變數區域之後）
+function calibrateTime(serverTimestamp) {
+  const localTimestamp = Date.now();
+  const timeDiff = serverTimestamp - localTimestamp;
+  
+  // 如果時間差異超過30秒，記錄警告
+  if (Math.abs(timeDiff) > 30000) {
+    console.warn(`客戶端與伺服器時間差異過大: ${timeDiff}ms`);
+    // 在UI上顯示警告
+    showTimeSyncWarning(timeDiff);
+  }
+  
+  return timeDiff;
+}
+
+function showTimeSyncWarning(timeDiff) {
+  // 簡單的警告提示
+  const warningDiv = document.createElement('div');
+  warningDiv.className = 'fixed top-4 right-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded shadow-lg z-50';
+  warningDiv.innerHTML = `
+    <div class="flex items-center">
+      <i class="fas fa-exclamation-triangle mr-2"></i>
+      <div>
+        <p class="font-bold">系統時間不同步</p>
+        <p>您的電腦時間與伺服器相差 ${Math.abs(Math.round(timeDiff/1000))} 秒，可能影響計時準確性</p>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(warningDiv);
+  
+  // 5秒後自動移除
+  setTimeout(() => {
+    warningDiv.style.transition = 'opacity 0.5s';
+    warningDiv.style.opacity = '0';
+    setTimeout(() => document.body.removeChild(warningDiv), 500);
+  }, 5000);
+}
+
+
+  
 // Student local state for outline configuration
 let studentNarrativeStructure = 'fourPart';
 let studentArgSegments = 3;
@@ -1712,7 +1753,6 @@ function setupRoomListener() {
     roomRef.off();
   }
   roomRef = database.ref('class_rooms/' + currentRoom);
-  
   let updateTimeout = null;
   let lastUpdateTime = 0;
   const MIN_UPDATE_INTERVAL = 300; 
@@ -1723,10 +1763,14 @@ function setupRoomListener() {
       showMainMenu();
       return;
     }
-    
     const roomData = snapshot.val();
-    const currentTime = Date.now();
     
+    // 時間校準
+    if (roomData.session && roomData.session.startTime) {
+      calibrateTime(roomData.session.startTime);
+    }
+    
+    const currentTime = Date.now();
     const isCriticalUpdate = 
       roomData.session?.active !== sessionActive ||
       !roomData.session?.active; 
@@ -2246,11 +2290,25 @@ function startLocalTimer(startTime, totalTime) {
   clearInterval(timer);
   lastQuestionStartTime = startTime;
   remainingTime = totalTime;
+  
+  // 增加對startTime的驗證
+  const serverTime = Date.now();
+  const timeDiff = Math.abs(serverTime - startTime);
+  
+  // 如果時間差超過5分鐘，可能表示客戶端時間不正確，使用伺服器時間重新計算
+  if (timeDiff > 300000) {
+    console.warn('檢測到客戶端與伺服器時間差異過大，重新校準計時器');
+    startTime = serverTime - (totalTime - remainingTime) * 1000;
+  }
+  
   timer = setInterval(() => {
     const currentTime = Date.now();
-    const elapsed = Math.floor((currentTime - startTime) / 1000);
-    remainingTime = Math.max(0, totalTime - elapsed);
+    // 確保 elapsed 不會是負數
+    const elapsed = Math.max(0, Math.floor((currentTime - startTime) / 1000));
+    // 確保不會超過總時間
+    remainingTime = Math.max(0, Math.min(totalTime, totalTime - elapsed));
     updateCountdownDisplay(remainingTime);
+    
     if (remainingTime <= 0) {
       clearInterval(timer);
       timer = null;
@@ -2268,9 +2326,9 @@ function startLocalTimer(startTime, totalTime) {
       }
     }
   }, 1000);
+  
   updateCountdownDisplay(remainingTime);
 }
-
   
 
 function updateCountdownDisplay(seconds) {
@@ -2322,12 +2380,24 @@ function updateHostUI(roomData) {
     // 檢查是否需要啟動計時器
     if (!timer) {
       const now = Date.now();
-      const elapsed = Math.floor((now - roomData.session.startTime) / 1000);
-      remainingTime = Math.max(0, roomData.session.timeLimit - elapsed);
+      // 驗證 startTime 是否有效
+      if (typeof roomData.session.startTime !== 'number' || isNaN(roomData.session.startTime)) {
+        console.error('無效的開始時間，重置計時器');
+        remainingTime = roomData.session.timeLimit || timeLimit;
+        updateCountdownDisplay(remainingTime);
+        return;
+      }
+      
+      // 計算已經過去的時間，但確保不會是負數
+      const elapsed = Math.max(0, Math.floor((now - roomData.session.startTime) / 1000));
+      
+      // 增加保護，確保 elapsed 不會大於 totalTime
+      const totalTime = roomData.session.timeLimit || timeLimit;
+      remainingTime = Math.max(0, totalTime - elapsed);
       
       // 只在會話活動時啟動計時器
       if (roomData.session.active) {
-        startLocalTimer(roomData.session.startTime, roomData.session.timeLimit);
+        startLocalTimer(roomData.session.startTime, totalTime);
       }
     }
   } else {
@@ -2344,21 +2414,27 @@ function updateHostUI(roomData) {
   
   // 更新回答列表
   updateAnswersList(roomData.answers, roomData.participants);
-
-// 在 updateHostUI 函數末尾添加
-const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
-if (remainingTimeDisplay && !remainingTimeDisplay.dataset.clickHandlerAdded) {
-  remainingTimeDisplay.style.cursor = 'pointer';
-  remainingTimeDisplay.title = '點擊放大顯示';
-  remainingTimeDisplay.addEventListener('click', function(e) {
-    e.stopPropagation();
-    if (!sessionActive || !isHost) return;
-    openFullscreenCountdown();
-  });
-  remainingTimeDisplay.dataset.clickHandlerAdded = 'true';
-}
-
   
+  // 確保剩餘時間顯示總是正確更新
+  const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
+  if (remainingTimeDisplay) {
+    // 確保 remainingTime 不會是異常值
+    remainingTime = Math.max(0, Math.min(3600, remainingTime)); // 限制在0-3600秒之間
+    
+    const minutes = Math.floor(remainingTime / 60);
+    const secs = remainingTime % 60;
+    const formattedTime = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    remainingTimeDisplay.textContent = formattedTime;
+    
+    // 根據剩餘時間設置顏色
+    if (remainingTime <= 5) {
+      remainingTimeDisplay.style.color = '#a86b6b';
+    } else if (remainingTime <= 10) {
+      remainingTimeDisplay.style.color = '#8a7663';
+    } else {
+      remainingTimeDisplay.style.color = '#383833';
+    }
+  }
 }
 
 function getStudentColor(studentName) {
@@ -2654,6 +2730,14 @@ async function startSession() {
     alert('請設定有效的時間');
     return;
   }
+  
+  // 驗證時間限制是否合理
+  if (timeLimit > 3600) { // 1小時
+    if (!confirm('您設定的時間超過1小時，確定要繼續嗎？')) {
+      return;
+    }
+  }
+  
   const sessionRef = database.ref('class_rooms/' + currentRoom + '/session');
   const sessionSnapshot = await sessionRef.once('value');
   const currentSession = sessionSnapshot.val();
@@ -2679,6 +2763,10 @@ async function startSession() {
     const outlineConfig = {
         type: outlineType
     };
+    
+    // 獲取伺服器時間以確保準確性
+    const serverTime = Date.now();
+    
     await database.ref('class_rooms/' + currentRoom).update({
       answers: {}, 
       session: {
@@ -2686,12 +2774,13 @@ async function startSession() {
         question: question,
         questionId: newQuestionId,
         timeLimit: timeLimit,
-        startTime: firebase.database.ServerValue.TIMESTAMP,
+        startTime: serverTime, // 使用客戶端時間，但會在接收時校準
         endTime: null,
         mode: mode,
         outlineConfig: outlineConfig
       }
     });
+    
     // 重置所有參與者狀態
     const participantsRef = database.ref('class_rooms/' + currentRoom + '/participants');
     const participantsSnapshot = await participantsRef.once('value');
