@@ -3147,12 +3147,16 @@ function initDrawingTools() {
 }
  
   // 初始化繪圖狀態
-  let isDrawing = false;
-  let lastX = 0;
-  let lastY = 0;
-  let currentColor = 'rgba(255, 0, 0, 0.8)'; // 預設紅色
-  let brushSize = 5;
-  let isEraser = false;
+ // 初始化繪圖狀態
+let isDrawing = false;
+let lastX = 0;
+let lastY = 0;
+let currentColor = 'rgba(255, 0, 0, 0.8)'; // 預設紅色
+let brushSize = 5;
+let eraserSize = 100; // 橡皮擦預設粗細（比筆粗很多）
+let isEraser = false;
+let currentEraserSize = eraserSize; // 用來保存橡皮擦當前大小
+let currentBrushSize = brushSize; // 用來保存筆當前大小
  
   // 設定canvas樣式
   drawingCanvas.style.position = 'absolute';
@@ -3204,26 +3208,52 @@ document.getElementById('fullscreenAnswers').addEventListener('dblclick', functi
     document.getElementById('eraserBtn').classList.remove('border-2', 'border-gray-700');
   });
  
- document.getElementById('eraserBtn').addEventListener('click', () => {
+document.getElementById('eraserBtn').addEventListener('click', () => {
   isEraser = true;
-  // 確保橡皮擦模式使用正確的樣式
-  drawingContext.globalCompositeOperation = 'destination-out';
-  drawingContext.strokeStyle = 'rgba(0,0,0,1)';
-  
-  // 更新按鈕狀態
+  // 保存當前筆的粗細
+  currentBrushSize = brushSize;
+  // 設置橡皮擦粗細
+  brushSize = currentEraserSize;
   document.getElementById('redPenBtn').classList.remove('border-2', 'border-red-700');
   document.getElementById('eraserBtn').classList.add('border-2', 'border-gray-700');
 });
+
+document.getElementById('redPenBtn').addEventListener('click', () => {
+  isEraser = false;
+  // 恢復筆的粗細
+  brushSize = currentBrushSize;
+  currentColor = 'rgba(255, 0, 0, 0.8)';
+  document.getElementById('redPenBtn').classList.add('border-2', 'border-red-700');
+  document.getElementById('eraserBtn').classList.remove('border-2', 'border-gray-700');
+});
  
-  document.getElementById('clearCanvasBtn').addEventListener('click', () => {
-    if (confirm('確定要清除所有批註嗎？')) {
-      clearCanvas();
-    }
-  });
+document.getElementById('clearCanvasBtn').addEventListener('click', () => {
+  if (confirm('確定要清除所有批註嗎？')) {
+    clearCanvas();
+    // 重置橡皮擦大小
+    currentEraserSize = eraserSize;
+  }
+});
  
-  document.getElementById('brushSize').addEventListener('input', (e) => {
-    brushSize = parseInt(e.target.value);
-  });
+document.getElementById('brushSize').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const sizes = JSON.parse(this.dataset.sizes);
+  const current = parseInt(this.dataset.value);
+  const nextIndex = (sizes.indexOf(current) + 1) % sizes.length;
+  const newSize = sizes[nextIndex];
+  this.dataset.value = newSize;
+  this.textContent = newSize;
+  
+  if (isEraser) {
+    // 如果當前是橡皮擦模式，更新橡皮擦大小
+    currentEraserSize = newSize * 3; // 橡皮擦總是筆的3倍粗
+    brushSize = currentEraserSize;
+  } else {
+    // 否則更新筆的大小
+    currentBrushSize = newSize;
+    brushSize = currentBrushSize;
+  }
+});
  
   // 繪圖功能
   function startDrawing(e) {
@@ -3241,33 +3271,34 @@ document.getElementById('fullscreenAnswers').addEventListener('dblclick', functi
     drawingContext.fill();
   }
  
-  function draw(e) {
-    if (!isDrawing) return;
-    e.preventDefault();
-   
-    const rect = drawingCanvas.getBoundingClientRect();
-    const currentX = (e.clientX || e.touches[0].clientX) - rect.left;
-    const currentY = (e.clientY || e.touches[0].clientY) - rect.top;
-   
-    drawingContext.beginPath();
-    drawingContext.moveTo(lastX, lastY);
-    drawingContext.lineTo(currentX, currentY);
-   
-    if (isEraser) {
-      drawingContext.globalCompositeOperation = 'destination-out';
-      drawingContext.strokeStyle = 'rgba(0,0,0,1)';
-    } else {
-      drawingContext.globalCompositeOperation = 'source-over';
-      drawingContext.strokeStyle = currentColor;
-    }
-   
+ function draw(e) {
+  if (!isDrawing) return;
+  e.preventDefault();
+  const rect = drawingCanvas.getBoundingClientRect();
+  const currentX = (e.clientX || e.touches[0].clientX) - rect.left;
+  const currentY = (e.clientY || e.touches[0].clientY) - rect.top;
+  
+  drawingContext.beginPath();
+  drawingContext.moveTo(lastX, lastY);
+  drawingContext.lineTo(currentX, currentY);
+  
+  if (isEraser) {
+    drawingContext.globalCompositeOperation = 'destination-out';
+    drawingContext.strokeStyle = 'rgba(0,0,0,1)';
+    // 確保橡皮擦使用大尺寸
     drawingContext.lineWidth = brushSize;
-    drawingContext.stroke();
-   
-    lastX = currentX;
-    lastY = currentY;
+  } else {
+    drawingContext.globalCompositeOperation = 'source-over';
+    drawingContext.strokeStyle = currentColor;
+    drawingContext.lineWidth = brushSize;
   }
- 
+  
+  drawingContext.stroke();
+  lastX = currentX;
+  lastY = currentY;
+}
+
+  
   function stopDrawing() {
     isDrawing = false;
   }
