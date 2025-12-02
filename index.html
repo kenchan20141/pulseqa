@@ -2415,7 +2415,17 @@ function getStudentColor(studentName) {
   const index = Math.abs(hash) % answerColors.length;
   return answerColors[index];
 }
+
+  
 function setupDoubleClickEditing(cardElement, studentName) {
+  // 新增：關閉繪圖工具
+  const drawingCanvasContainer = document.getElementById('drawingCanvasContainer');
+  const drawingTools = document.getElementById('drawingTools');
+  if (drawingCanvasContainer && drawingTools) {
+    drawingCanvasContainer.classList.add('hidden');
+    drawingTools.classList.add('hidden');
+  }
+  
   const answerElement = cardElement.querySelector('.answer-display');
   const saveStatus = cardElement.querySelector('.save-status');
  
@@ -2536,6 +2546,7 @@ function openFullscreenAnswers(answers, participants) {
   }, 300);
 }
 function closeFullscreenAnswers() {
+  closeDrawingTools(); // 關閉繪圖工具
   const fullscreenContainer = document.getElementById('fullscreenAnswers');
   fullscreenContainer.classList.add('hidden');
   document.body.style.overflow = '';
@@ -3116,6 +3127,25 @@ function downloadMyAnswer() {
         alert('下載回答失敗，請重試');
     });
 }
+
+function closeDrawingTools() {
+  const drawingCanvasContainer = document.getElementById('drawingCanvasContainer');
+  const drawingTools = document.getElementById('drawingTools');
+  const toggleBtn = document.getElementById('toggleDrawingTools');
+  
+  if (drawingCanvasContainer && drawingTools && toggleBtn) {
+    drawingCanvasContainer.classList.add('hidden');
+    drawingTools.classList.add('hidden');
+    // 重置canvas
+    const drawingCanvas = document.getElementById('drawingCanvas');
+    const drawingContext = drawingCanvas.getContext('2d');
+    drawingContext.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+  }
+}
+
+
+
+  
 // 初始化繪圖工具
 function initDrawingTools() {
   const drawingCanvas = document.getElementById('drawingCanvas');
@@ -3158,23 +3188,29 @@ let isEraser = false;
 let currentEraserSize = eraserSize; // 用來保存橡皮擦當前大小
 let currentBrushSize = brushSize; // 用來保存筆當前大小
  
-  // 設定canvas樣式
-  drawingCanvas.style.position = 'absolute';
-  drawingCanvas.style.top = '0';
-  drawingCanvas.style.left = '0';
-  drawingCanvas.style.pointerEvents = 'auto';
- 
-  // 調整canvas大小
-  window.addEventListener('resize', resizeCanvas);
- 
-  // 工具按鈕事件
-  toggleDrawingToolsBtn.addEventListener('click', () => {
-    drawingCanvasContainer.classList.toggle('hidden');
-    drawingTools.classList.toggle('hidden');
-    if (!drawingCanvasContainer.classList.contains('hidden')) {
-      resizeCanvas();
-    }
-  });
+// 設定canvas樣式
+drawingCanvas.style.position = 'absolute';
+drawingCanvas.style.top = '0';
+drawingCanvas.style.left = '0';
+drawingCanvas.style.pointerEvents = 'none'; // 默認不接收事件
+
+// 在toggleDrawingToolsBtn的點擊事件中添加
+toggleDrawingToolsBtn.addEventListener('click', () => {
+  const isHidden = drawingCanvasContainer.classList.contains('hidden');
+  drawingCanvasContainer.classList.toggle('hidden');
+  drawingTools.classList.toggle('hidden');
+  
+  if (isHidden) {
+    // 顯示繪圖工具
+    drawingCanvas.style.pointerEvents = 'auto';
+    resizeCanvas();
+  } else {
+    // 隱藏繪圖工具
+    drawingCanvas.style.pointerEvents = 'none';
+    // 清除canvas
+    drawingContext.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+  }
+});
 
 
 // 添加雙擊關閉繪畫模式功能
@@ -3499,8 +3535,9 @@ function saveAndCloseEditor() {
     closeModalEditor();
 }
 document.body.addEventListener('click', function(event) {
-    const target = event.target;
-    if (target.tagName === 'TEXTAREA' && !target.classList.contains('no-modal-editor') && target.id !== 'modal-textarea' && target.id !== 'questionInput') {
+  const target = event.target;
+  if (target.tagName === 'TEXTAREA' && !target.classList.contains('no-modal-editor') && target.id !== 'modal-textarea' && target.id !== 'questionInput') {
+    closeDrawingTools(); // 關閉繪圖工具
         // Exclude host's question input if desired, or let it open modal too
         // Ensure studentAnswer is covered
         if(!isHost || target.id === 'questionInput') { // Let host edit question too
