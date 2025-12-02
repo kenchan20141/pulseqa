@@ -1071,14 +1071,21 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
 
 /* 改善觸控體驗 */
 #drawingCanvas {
-  touch-action: none; /* 防止瀏覽器處理觸摸事件 */
-  -webkit-touch-callout: none; /* 防止長按選單 */
+  touch-action: none;
+  -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+  z-index: 40; /* 確保在正確的層級 */
 }
 
 #drawingCanvasContainer:not(.hidden) {
-  pointer-events: auto !important; /* 確保觸控事件被接收 */
+  pointer-events: auto !important;
+  z-index: 41;
+}
+
+#drawingTools:not(.hidden) {
+  pointer-events: auto !important;
+  z-index: 50;
 }
 
 /* 繪圖工具按鈕觸控優化 */
@@ -3131,15 +3138,22 @@ function downloadMyAnswer() {
 function closeDrawingTools() {
   const drawingCanvasContainer = document.getElementById('drawingCanvasContainer');
   const drawingTools = document.getElementById('drawingTools');
-  const toggleBtn = document.getElementById('toggleDrawingTools');
+  const drawingCanvas = document.getElementById('drawingCanvas');
   
-  if (drawingCanvasContainer && drawingTools && toggleBtn) {
+  if (drawingCanvasContainer && drawingTools && drawingCanvas) {
+    // 隱藏繪圖工具
     drawingCanvasContainer.classList.add('hidden');
     drawingTools.classList.add('hidden');
-    // 重置canvas
-    const drawingCanvas = document.getElementById('drawingCanvas');
-    const drawingContext = drawingCanvas.getContext('2d');
-    drawingContext.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+    
+    // 停止繪圖狀態
+    isDrawing = false;
+    
+    // 重置畫布事件
+    drawingCanvas.style.pointerEvents = 'none';
+    
+    // 清除畫布（可選）
+    // const drawingContext = drawingCanvas.getContext('2d');
+    // drawingContext.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
   }
 }
 
@@ -3206,9 +3220,7 @@ toggleDrawingToolsBtn.addEventListener('click', () => {
     resizeCanvas();
   } else {
     // 隱藏繪圖工具
-    drawingCanvas.style.pointerEvents = 'none';
-    // 清除canvas
-    drawingContext.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+    closeDrawingTools();
   }
 });
 
@@ -3217,22 +3229,27 @@ toggleDrawingToolsBtn.addEventListener('click', () => {
 document.getElementById('drawingCanvasContainer').addEventListener('dblclick', function(e) {
   // 如果畫布容器可見，則雙擊關閉
   if (!drawingCanvasContainer.classList.contains('hidden')) {
-    drawingCanvasContainer.classList.add('hidden');
-    drawingTools.classList.add('hidden');
-    // 停止繪圖狀態
-    isDrawing = false;
+    e.preventDefault();
+    e.stopPropagation(); // 重要：阻止事件冒泡
+    closeDrawingTools(); // 使用統一的關閉函數
   }
 });
 
 // 同樣為全屏容器添加雙擊關閉（任意位置雙擊）
 document.getElementById('fullscreenAnswers').addEventListener('dblclick', function(e) {
-  // 檢查雙擊目標不是繪圖工具按鈕
-  if (!e.target.closest('#drawingTools') && 
-      !e.target.closest('#toggleDrawingTools') &&
-      !drawingCanvasContainer.classList.contains('hidden')) {
-    drawingCanvasContainer.classList.add('hidden');
-    drawingTools.classList.add('hidden');
-    isDrawing = false;
+  // 檢查雙擊目標是否是畫布或畫布容器
+  const drawingCanvas = document.getElementById('drawingCanvas');
+  const drawingCanvasContainer = document.getElementById('drawingCanvasContainer');
+  
+  if (e.target === drawingCanvas || 
+      e.target === drawingCanvasContainer ||
+      drawingCanvasContainer.contains(e.target)) {
+    // 雙擊畫布區域，關閉繪圖模式
+    if (!drawingCanvasContainer.classList.contains('hidden')) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeDrawingTools();
+    }
   }
 });
 
