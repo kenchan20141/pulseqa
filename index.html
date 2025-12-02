@@ -1334,9 +1334,12 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
 </div>
 </div>
 <div class="time-button-wrapper">
-<button id="startBtn" onclick="startSession()" class="wabi-sabi-button primary px-7 py-3.5 rounded-xl font-medium text-lg">
-<i class="fas fa-play mr-2"></i>開始
-</button>
+    <button id="shareScreenBtn" onclick="toggleScreenSharing()" class="wabi-sabi-button secondary px-7 py-3.5 rounded-xl font-medium text-lg hidden mr-3">
+        <i class="fas fa-broadcast-tower mr-2"></i><span id="shareScreenBtnText">同步畫面</span>
+    </button>
+    <button id="startBtn" onclick="startSession()" class="wabi-sabi-button primary px-7 py-3.5 rounded-xl font-medium text-lg">
+        <i class="fas fa-play mr-2"></i>開始
+    </button>
 </div>
 </div>
 
@@ -1525,6 +1528,160 @@ let sessionActive = false;
 let lastQuestionStartTime = null;
 let hasSubmitted = false;
 let currentQuestionId = null; 
+
+  // 全局變量
+let isSharingScreen = false;
+
+// 切換畫面同步功能
+async function toggleScreenSharing() {
+  if (!isHost || !currentRoom || !sessionActive) return;
+  
+  isSharingScreen = !isSharingScreen;
+  const shareScreenBtn = document.getElementById('shareScreenBtn');
+  const shareScreenBtnText = document.getElementById('shareScreenBtnText');
+  
+  try {
+    await database.ref('class_rooms/' + currentRoom + '/session').update({
+      sharingScreen: isSharingScreen
+    });
+    
+    if (isSharingScreen) {
+      shareScreenBtn.classList.remove('secondary');
+      shareScreenBtn.classList.add('primary');
+      shareScreenBtnText.textContent = '';
+    } else {
+      shareScreenBtn.classList.remove('primary');
+      shareScreenBtn.classList.add('secondary');
+      shareScreenBtnText.textContent = '';
+    }
+  } catch (error) {
+    console.error('切換畫面同步失敗:', error);
+    isSharingScreen = !isSharingScreen; // 回滾狀態
+    alert('切換畫面同步失敗，請重試');
+  }
+}
+
+// 顯示同步畫面（學生端）
+function showSharedScreen(roomData) {
+  // 隱藏平常的學生答題介面
+  document.getElementById('studentSection').classList.add('hidden');
+  // 顯示共享畫面容器（如果不存在則創建）
+  let sharedScreenContainer = document.getElementById('sharedScreenContainer');
+  if (!sharedScreenContainer) {
+    sharedScreenContainer = document.createElement('div');
+    sharedScreenContainer.id = 'sharedScreenContainer';
+    sharedScreenContainer.className = 'fixed inset-0 bg-earth-beige z-50 p-4 overflow-auto';
+    document.body.appendChild(sharedScreenContainer);
+  }
+  // 生成共享內容
+  let sharedContent = `
+    <div class="max-w-6xl mx-auto">
+      <div class="wabi-sabi-card p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-bold text-wabi">
+            <i class="fas fa-broadcast-tower mr-2 text-clay-brown"></i>
+            同步畫面
+          </h2>
+          <button onclick="hideSharedScreen()" class="wabi-sabi-button px-4 py-2">
+            <i class="fas fa-times mr-1"></i>
+          </button>
+        </div>
+        <div class="mb-6">
+          <h3 class="text-xl font-bold text-wabi mb-3">問題內容</h3>
+          <div class="p-4 bg-earth-beige rounded-xl border border-stone-gray">
+            <p class="text-lg whitespace-pre-wrap">${roomData.session.question || '無'}</p>
+          </div>
+        </div>
+      </div>
+      <div class="wabi-sabi-card p-6">
+        <h3 class="text-xl font-bold text-wabi mb-4">回答狀態</h3>
+        <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+  `;
+  // 添加學生回答列表
+  if (roomData.answers && Object.keys(roomData.answers).length > 0) {
+    const answersArray = Object.entries(roomData.answers)
+      .map(([name, answerData]) => ({
+        name,
+        ...answerData
+      }))
+      .sort((a, b) => a.timestamp - b.timestamp);
+    answersArray.forEach((answer) => {
+      const participant = roomData.participants?.[answer.name] || {};
+      const isLate = participant.late || false;
+      const studentColor = getStudentColor(answer.name);
+      // 處理大綱內容和普通文本
+      let previewContent = '';
+      if (answer.text.includes('<table')) {
+        // 為表格添加水平滾動容器，確保完整顯示且可滾動查看
+        previewContent = `
+          <div class="overflow-x-auto mt-2">
+            <div class="min-w-[800px]">
+              ${answer.text.replace('<table', '<table class="rendered-outline-table w-full text-left"')}
+            </div>
+          </div>
+        `;
+      } else {
+        // 普通文本處理
+        previewContent = `<div class="whitespace-pre-wrap break-words text-lg">${answer.text}</div>`;
+      }
+      sharedContent += `
+        <div class="p-4 bg-earth-beige rounded-lg border-l-4" style="border-color: ${studentColor.border}">
+          <div class="font-bold flex items-center mb-2">
+            ${answer.name}
+            ${isLate ? 
+              '<span class="ml-2 bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full flex items-center"><i class="fas fa-clock mr-1"></i> 超時</span>' : 
+              '<span class="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full flex items-center"><i class="fas fa-check mr-1"></i> 已提交</span>'}
+          </div>
+          <div class="mt-2">
+            ${previewContent}
+          </div>
+        </div>
+      `;
+    });
+  } else {
+    sharedContent += '<div class="text-center py-12 text-wabi-secondary text-lg">尚未有學生提交回答</div>';
+  }
+  sharedContent += `
+        </div>
+      </div>
+    </div>
+  `;
+  sharedScreenContainer.innerHTML = sharedContent;
+  
+  // 為渲染的表格添加適當樣式
+  document.querySelectorAll('.rendered-outline-table').forEach(table => {
+    // 確保表格有適當的樣式
+    table.style.borderCollapse = 'collapse';
+    table.style.minWidth = '800px';
+    
+    // 設置表格單元格樣式
+    const cells = table.querySelectorAll('td, th');
+    cells.forEach(cell => {
+      cell.style.padding = '12px 15px';
+      cell.style.border = '1px solid rgba(138, 118, 99, 0.3)';
+      cell.style.verticalAlign = 'top';
+      cell.style.fontSize = '1rem';
+      cell.style.lineHeight = '1.5';
+    });
+    
+    // 設置表頭樣式
+    const headers = table.querySelectorAll('th');
+    headers.forEach(header => {
+      header.style.backgroundColor = 'rgba(138, 118, 99, 0.1)';
+      header.style.fontWeight = '600';
+      header.style.color = 'var(--charcoal)';
+    });
+  });
+}
+
+// 隱藏同步畫面（學生端）
+function hideSharedScreen() {
+  const sharedScreenContainer = document.getElementById('sharedScreenContainer');
+  if (sharedScreenContainer) {
+    sharedScreenContainer.remove();
+  }
+  document.getElementById('studentSection').classList.remove('hidden');
+}
 
 
 // 增加這個函數在檔案頂部（全域變數區域之後）
@@ -2132,34 +2289,27 @@ function updateStudentUI(roomData) {
   const answerInputArea = document.getElementById('answerInputArea');
   const container = document.getElementById('studentInputContainer');
   const participant = roomData.participants?.[currentUser] || {};
-  
   // 確保 container 存在
   if (!container) return;
-  
   // 獲取當前回合 ID 和已渲染的回合 ID
   const currentMode = roomData.session?.mode || 'qa';
   const currentQID = roomData.session?.questionId ? String(roomData.session.questionId) : null;
   const renderedQID = container.getAttribute('data-qid');
-  
   // 檢查是否需要更新 UI (模式變更、問題 ID 變更、或首次加載)
   const needsUIUpdate = currentMode !== container.getAttribute('data-mode') || 
                         currentQID !== renderedQID ||
                         !container.hasChildNodes();
-  
   if (needsUIUpdate && currentQID) {
     // 保存滾動位置
     const scrollPos = container.scrollTop;
-    
     // 清除並重建 UI
     container.innerHTML = '';
     container.setAttribute('data-mode', currentMode);
     container.setAttribute('data-qid', currentQID);
-    
     // 重置所有本地提交狀態 - 這是關鍵修復
     hasSubmitted = false;
     submissionStatus.classList.add('hidden');
     answerInputArea.classList.remove('submitted', 'late');
-    
     // 根據模式創建適當的輸入元素
     if (currentMode === 'qa') {
       const textarea = document.createElement('textarea');
@@ -2171,35 +2321,35 @@ function updateStudentUI(roomData) {
     } else if (currentMode === 'outline') {
       const type = roomData.session?.outlineConfig?.type || 'narrative';
       renderStudentOutlineUI(type);
-      
       // 禁用所有輸入元素，等待計時開始
       const inputs = container.querySelectorAll('textarea, select, button');
       inputs.forEach(el => el.disabled = true);
     }
-    
     // 恢復滾動位置
     container.scrollTop = scrollPos;
   }
-  
+  // 處理畫面同步
+  if (roomData.session && roomData.session.sharingScreen && roomData.session.active) {
+    showSharedScreen(roomData);
+  } else {
+    hideSharedScreen();
+  }
   // 更新問題顯示
   if (roomData.session?.active) {
     const questionText = roomData.session.question || '請輸入您的回答';
     questionDisplay.textContent = questionText;
     questionDisplay.classList.remove('text-wabi-secondary');
     questionDisplay.classList.add('text-charcoal');
-    
     // 啟動本地計時器
     if (roomData.session.startTime && !timer) {
       startLocalTimer(roomData.session.startTime, roomData.session.timeLimit);
     }
-    
     // 處理計時狀態
     if (remainingTime <= 0) {
       // 時間已到
       disableAllInputs();
       submitBtn.classList.add('hidden');
       submitBtn.disabled = true;
-      
       // 只有當學生尚未提交且當前問題匹配時才標記為超時
       if (!participant.submitted && String(participant.lastQuestionId) === currentQID) {
         const inputs = container.querySelectorAll('textarea');
@@ -2218,15 +2368,13 @@ function updateStudentUI(roomData) {
     questionDisplay.classList.add('text-wabi-secondary');
     questionDisplay.classList.remove('text-charcoal');
     countdownDisplay.textContent = '10:00';
-    
     disableAllInputs();
     submitBtn.classList.add('hidden');
     submitBtn.disabled = true;
-    
     clearInterval(timer);
     timer = null;
+    hideSharedScreen(); // 確保關閉共享畫面
   }
-  
   // 輔助函數：禁用所有輸入
   function disableAllInputs() {
     const inputs = container.querySelectorAll('textarea, select, button');
@@ -2237,28 +2385,23 @@ function updateStudentUI(roomData) {
       }
     });
   }
-  
   // 輔助函數：如果未提交則啟用輸入
   function enableInputsIfNotSubmitted() {
     // 檢查學生是否已針對當前問題提交
     const hasSubmittedCurrentQuestion = 
       participant.submitted && 
       String(participant.lastQuestionId) === currentQID;
-    
     if (hasSubmittedCurrentQuestion) {
       // 已提交當前問題
       hasSubmitted = true;
       submissionStatus.classList.remove('hidden');
-      
       // 如果是超時提交，添加相應樣式
       if (participant.late) {
         answerInputArea.classList.add('late');
       }
-      
       // 禁用所有輸入
       const inputs = container.querySelectorAll('textarea, select, button');
       inputs.forEach(el => el.disabled = true);
-      
       submitBtn.classList.add('hidden');
       submitBtn.disabled = true;
       answerInputArea.classList.add('submitted');
@@ -2267,7 +2410,6 @@ function updateStudentUI(roomData) {
       hasSubmitted = false;
       submissionStatus.classList.add('hidden');
       answerInputArea.classList.remove('submitted', 'late');
-      
       // 啟用輸入
       const inputs = container.querySelectorAll('textarea, select, button');
       inputs.forEach(el => {
@@ -2276,7 +2418,6 @@ function updateStudentUI(roomData) {
           el.placeholder = '請在此輸入您的回答...';
         }
       });
-      
       // 顯示提交按鈕
       if (remainingTime > 0) {
         submitBtn.classList.remove('hidden');
@@ -2375,8 +2516,7 @@ function updateCountdownDisplay(seconds) {
 function updateHostUI(roomData) {
   // 更新按鈕狀態
   if (roomData.session.active && roomData.session.startTime) {
-    document.getElementById('startBtn').innerHTML = '<i class="fas fa-pause mr-2"></i>暫停';
-    
+    document.getElementById('startBtn').innerHTML = '<i class="fas fa-pause mr-2"></i>';
     // 檢查是否需要啟動計時器
     if (!timer) {
       const now = Date.now();
@@ -2387,45 +2527,59 @@ function updateHostUI(roomData) {
         updateCountdownDisplay(remainingTime);
         return;
       }
-      
       // 計算已經過去的時間，但確保不會是負數
       const elapsed = Math.max(0, Math.floor((now - roomData.session.startTime) / 1000));
-      
       // 增加保護，確保 elapsed 不會大於 totalTime
       const totalTime = roomData.session.timeLimit || timeLimit;
       remainingTime = Math.max(0, totalTime - elapsed);
-      
       // 只在會話活動時啟動計時器
       if (roomData.session.active) {
         startLocalTimer(roomData.session.startTime, totalTime);
+      }
+    }
+    
+    // 更新分享按鈕狀態
+    const shareScreenBtn = document.getElementById('shareScreenBtn');
+    if (shareScreenBtn) {
+      shareScreenBtn.classList.remove('hidden');
+      if (roomData.session.sharingScreen) {
+        shareScreenBtn.classList.remove('secondary');
+        shareScreenBtn.classList.add('primary');
+        document.getElementById('shareScreenBtnText').textContent = '';
+        isSharingScreen = true;
+      } else {
+        shareScreenBtn.classList.remove('primary');
+        shareScreenBtn.classList.add('secondary');
+        document.getElementById('shareScreenBtnText').textContent = '';
+        isSharingScreen = false;
       }
     }
   } else {
     // 會話未活動
     clearInterval(timer);
     timer = null;
-    
     // 重置剩餘時間為設定的時間限制
     remainingTime = roomData.session.timeLimit || timeLimit;
     updateCountdownDisplay(remainingTime);
-    
     document.getElementById('startBtn').innerHTML = '<i class="fas fa-play mr-2"></i>開始';
+    
+    // 隱藏分享按鈕
+    const shareScreenBtn = document.getElementById('shareScreenBtn');
+    if (shareScreenBtn) {
+      shareScreenBtn.classList.add('hidden');
+    }
   }
-  
   // 更新回答列表
   updateAnswersList(roomData.answers, roomData.participants);
-  
   // 確保剩餘時間顯示總是正確更新
   const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
   if (remainingTimeDisplay) {
     // 確保 remainingTime 不會是異常值
     remainingTime = Math.max(0, Math.min(3600, remainingTime)); // 限制在0-3600秒之間
-    
     const minutes = Math.floor(remainingTime / 60);
     const secs = remainingTime % 60;
     const formattedTime = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     remainingTimeDisplay.textContent = formattedTime;
-    
     // 根據剩餘時間設置顏色
     if (remainingTime <= 5) {
       remainingTimeDisplay.style.color = '#a86b6b';
@@ -2436,6 +2590,9 @@ function updateHostUI(roomData) {
     }
   }
 }
+
+
+  
 
 function getStudentColor(studentName) {
   let hash = 0;
@@ -2730,30 +2887,34 @@ async function startSession() {
     alert('請設定有效的時間');
     return;
   }
-  
   // 驗證時間限制是否合理
   if (timeLimit > 3600) { // 1小時
     if (!confirm('您設定的時間超過1小時，確定要繼續嗎？')) {
       return;
     }
   }
-  
   const sessionRef = database.ref('class_rooms/' + currentRoom + '/session');
   const sessionSnapshot = await sessionRef.once('value');
   const currentSession = sessionSnapshot.val();
-  
   // 清除現有計時器
   if (timer) {
     clearInterval(timer);
     timer = null;
   }
-  
   if (currentSession.active) {
     // 暫停會話
     await sessionRef.update({
-      active: false
+      active: false,
+      sharingScreen: false // 停止共享
     });
     sessionActive = false;
+    // 隱藏分享按鈕
+    document.getElementById('shareScreenBtn').classList.add('hidden');
+    // 更新按鈕文本
+    const shareScreenBtnText = document.getElementById('shareScreenBtnText');
+    if (shareScreenBtnText) {
+      shareScreenBtnText.textContent = '同步畫面';
+    }
   } else {
     // 開始會話
     const newQuestionId = Date.now();
@@ -2763,10 +2924,8 @@ async function startSession() {
     const outlineConfig = {
         type: outlineType
     };
-    
     // 獲取伺服器時間以確保準確性
     const serverTime = Date.now();
-    
     await database.ref('class_rooms/' + currentRoom).update({
       answers: {}, 
       session: {
@@ -2774,13 +2933,13 @@ async function startSession() {
         question: question,
         questionId: newQuestionId,
         timeLimit: timeLimit,
-        startTime: serverTime, // 使用客戶端時間，但會在接收時校準
+        startTime: serverTime,
         endTime: null,
         mode: mode,
-        outlineConfig: outlineConfig
+        outlineConfig: outlineConfig,
+        sharingScreen: false // 初始狀態為不共享
       }
     });
-    
     // 重置所有參與者狀態
     const participantsRef = database.ref('class_rooms/' + currentRoom + '/participants');
     const participantsSnapshot = await participantsRef.once('value');
@@ -2796,12 +2955,15 @@ async function startSession() {
     }
     sessionActive = true;
     remainingTime = timeLimit;
-    
+    // 顯示分享按鈕
+    document.getElementById('shareScreenBtn').classList.remove('hidden');
     // 立即更新顯示
     updateCountdownDisplay(remainingTime);
   }
 }
 
+
+  
 async function endSession() {
 
  // 關閉全屏倒計時
