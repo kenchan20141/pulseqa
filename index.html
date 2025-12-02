@@ -1068,6 +1068,24 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   color: rgba(255, 255, 255, 0.85);
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
+
+/* 改善觸控體驗 */
+#drawingCanvas {
+  touch-action: none; /* 防止瀏覽器處理觸摸事件 */
+  -webkit-touch-callout: none; /* 防止長按選單 */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#drawingCanvasContainer:not(.hidden) {
+  pointer-events: auto !important; /* 確保觸控事件被接收 */
+}
+
+/* 繪圖工具按鈕觸控優化 */
+.font-btn, .outline-control-btn, .wabi-sabi-button {
+  -webkit-tap-highlight-color: transparent; /* 移除觸控高亮 */
+}
+  
 </style>
 </head>
 <body>
@@ -3125,6 +3143,7 @@ function initDrawingTools() {
   
   drawingContext.lineCap = 'round';
   drawingContext.lineJoin = 'round';
+
 }
  
   // 初始化繪圖狀態
@@ -3152,7 +3171,32 @@ function initDrawingTools() {
       resizeCanvas();
     }
   });
- 
+
+
+// 添加雙擊關閉繪畫模式功能
+document.getElementById('drawingCanvasContainer').addEventListener('dblclick', function(e) {
+  // 如果畫布容器可見，則雙擊關閉
+  if (!drawingCanvasContainer.classList.contains('hidden')) {
+    drawingCanvasContainer.classList.add('hidden');
+    drawingTools.classList.add('hidden');
+    // 停止繪圖狀態
+    isDrawing = false;
+  }
+});
+
+// 同樣為全屏容器添加雙擊關閉（任意位置雙擊）
+document.getElementById('fullscreenAnswers').addEventListener('dblclick', function(e) {
+  // 檢查雙擊目標不是繪圖工具按鈕
+  if (!e.target.closest('#drawingTools') && 
+      !e.target.closest('#toggleDrawingTools') &&
+      !drawingCanvasContainer.classList.contains('hidden')) {
+    drawingCanvasContainer.classList.add('hidden');
+    drawingTools.classList.add('hidden');
+    isDrawing = false;
+  }
+});
+
+  
   document.getElementById('redPenBtn').addEventListener('click', () => {
     currentColor = 'rgba(255, 0, 0, 0.8)';
     isEraser = false;
@@ -3160,11 +3204,16 @@ function initDrawingTools() {
     document.getElementById('eraserBtn').classList.remove('border-2', 'border-gray-700');
   });
  
-  document.getElementById('eraserBtn').addEventListener('click', () => {
-    isEraser = true;
-    document.getElementById('redPenBtn').classList.remove('border-2', 'border-red-700');
-    document.getElementById('eraserBtn').classList.add('border-2', 'border-gray-700');
-  });
+ document.getElementById('eraserBtn').addEventListener('click', () => {
+  isEraser = true;
+  // 確保橡皮擦模式使用正確的樣式
+  drawingContext.globalCompositeOperation = 'destination-out';
+  drawingContext.strokeStyle = 'rgba(0,0,0,1)';
+  
+  // 更新按鈕狀態
+  document.getElementById('redPenBtn').classList.remove('border-2', 'border-red-700');
+  document.getElementById('eraserBtn').classList.add('border-2', 'border-gray-700');
+});
  
   document.getElementById('clearCanvasBtn').addEventListener('click', () => {
     if (confirm('確定要清除所有批註嗎？')) {
@@ -3235,34 +3284,80 @@ function initDrawingTools() {
   drawingCanvas.addEventListener('mouseout', stopDrawing);
  
   // 觸控事件
-// 替换现有的触摸事件处理
-drawingCanvas.addEventListener('touchstart', (e) => {
-  if (drawingCanvasContainer.classList.contains('hidden') || e.touches.length > 1) return;
-  e.preventDefault();
-  startDrawing({
-    clientX: e.touches[0].clientX,
-    clientY: e.touches[0].clientY
-  });
-});
-
-drawingCanvas.addEventListener('touchmove', (e) => {
-  if (e.touches.length > 1) return;
-  e.preventDefault();
-  draw({
-    clientX: e.touches[0].clientX,
-    clientY: e.touches[0].clientY
-  });
-});
- 
-  drawingCanvas.addEventListener('touchend', stopDrawing);
-  drawingCanvas.addEventListener('touchcancel', stopDrawing);
-
-  // 這裡添加防止iPad上触摸时页面滚动的代碼
-document.getElementById('drawingCanvasContainer').addEventListener('touchmove', function(e) {
-  if (!drawingCanvasContainer.classList.contains('hidden')) {
+// 修改觸控事件處理 - 確保阻止默認行為和正確處理觸摸點
+  drawingCanvas.addEventListener('touchstart', (e) => {
+    if (drawingCanvasContainer.classList.contains('hidden') || e.touches.length > 1) return;
+    
+    // 阻止所有觸摸事件的默認行為（防止滾動）
     e.preventDefault();
-  }
-}, { passive: false });
+    e.stopPropagation();
+    
+    const rect = drawingCanvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    lastX = touch.clientX - rect.left;
+    lastY = touch.clientY - rect.top;
+    
+    // 立即繪製一個點
+    drawingContext.beginPath();
+    drawingContext.arc(lastX, lastY, brushSize/2, 0, Math.PI * 2);
+    drawingContext.fillStyle = currentColor;
+    drawingContext.fill();
+    
+    isDrawing = true;
+  }, { passive: false });
+
+  drawingCanvas.addEventListener('touchmove', (e) => {
+    if (!isDrawing || e.touches.length > 1) return;
+    
+    // 阻止所有觸摸移動的默認行為
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const rect = drawingCanvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    const currentX = touch.clientX - rect.left;
+    const currentY = touch.clientY - rect.top;
+    
+    // 繪製線條
+    drawingContext.beginPath();
+    drawingContext.moveTo(lastX, lastY);
+    drawingContext.lineTo(currentX, currentY);
+    
+    if (isEraser) {
+      drawingContext.globalCompositeOperation = 'destination-out';
+      drawingContext.strokeStyle = 'rgba(0,0,0,1)';
+    } else {
+      drawingContext.globalCompositeOperation = 'source-over';
+      drawingContext.strokeStyle = currentColor;
+    }
+    
+    drawingContext.lineWidth = brushSize;
+    drawingContext.stroke();
+    
+    lastX = currentX;
+    lastY = currentY;
+  }, { passive: false });
+
+  drawingCanvas.addEventListener('touchend', (e) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    e.stopPropagation();
+    stopDrawing();
+  });
+
+  drawingCanvas.addEventListener('touchcancel', (e) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    e.stopPropagation();
+    stopDrawing();
+  });
+
+  // 添加防止頁面滾動的事件監聽器
+  document.addEventListener('touchmove', function(e) {
+    if (!drawingCanvasContainer.classList.contains('hidden') && isDrawing) {
+      e.preventDefault();
+    }
+  }, { passive: false });
  
   // 全屏滾動時更新canvas位置
   const answersList = document.getElementById('fullscreenAnswersList');
