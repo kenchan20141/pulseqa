@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -76,7 +75,7 @@ body::before {
   border: 1px solid rgba(141, 123, 104, 0.3);
   border-radius: var(--border-radius);
   padding: 13px 26px;
-  font-family: 'Noto Serif TC', serif;
+  font-family: 'Noto Serif TC', serif
   font-weight: 600;
   letter-spacing: 0.5px;
   transition: var(--transition);
@@ -641,7 +640,7 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   transform: scale(1.1);
 }
 .role-title {
-  font-family: 'Noto Serif TC', serif;
+  font-family: ''Noto Serif TC', serif;
   font-size: 1.4rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
@@ -1092,30 +1091,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
 /* 繪圖工具按鈕觸控優化 */
 .font-btn, .outline-control-btn, .wabi-sabi-button {
   -webkit-tap-highlight-color: transparent; /* 移除觸控高亮 */
-}
-
-/* Slider Customization */
-input[type=range] {
-  -webkit-appearance: none;
-  width: 100%;
-  background: transparent;
-}
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  height: 20px;
-  width: 20px;
-  border-radius: 50%;
-  background: var(--clay-brown);
-  cursor: pointer;
-  margin-top: -8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-}
-input[type=range]::-webkit-slider-runnable-track {
-  width: 100%;
-  height: 4px;
-  cursor: pointer;
-  background: #ddd;
-  border-radius: 2px;
 }
   
 </style>
@@ -3175,9 +3150,16 @@ function closeDrawingTools() {
     
     // 重置畫布事件
     drawingCanvas.style.pointerEvents = 'none';
+    
+    // 清除畫布（可選）
+    // const drawingContext = drawingCanvas.getContext('2d');
+    // drawingContext.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
   }
 }
 
+
+
+  
 // 初始化繪圖工具
 function initDrawingTools() {
   const drawingCanvas = document.getElementById('drawingCanvas');
@@ -3202,6 +3184,7 @@ function initDrawingTools() {
     
     // 縮放上下文
     drawingContext.scale(dpr, dpr);
+    
     drawingContext.lineCap = 'round';
     drawingContext.lineJoin = 'round';
 
@@ -3209,82 +3192,126 @@ function initDrawingTools() {
   }
 
   function saveDrawingState() {
-    if (drawingCanvasContainer.classList.contains('hidden')) return;
+    if (drawingCanvasContainer.classList.contains('hidden')) return; // 只在繪圖模式下保存
 
-    const drawingContext = drawingCanvas.getContext('2d');
+    const drawingContext = drawingCanvas.getContext('2d'); // 確保獲取當前上下文
+    // 獲取當前 canvas 的圖像數據
     const imageData = drawingContext.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
 
+    // 更新歷史記錄
+    // 如果當前索引不是最後一個，則清除後面的記錄
     if (historyIndex < drawingHistory.length - 1) {
       drawingHistory = drawingHistory.slice(0, historyIndex + 1);
     }
     drawingHistory.push(imageData);
 
+    // 限制歷史記錄數量
     if (drawingHistory.length > maxHistorySteps) {
-      drawingHistory.shift();
-      historyIndex = drawingHistory.length - 1;
+      drawingHistory.shift(); // 移除最早的一個記錄
+      historyIndex = drawingHistory.length - 1; // 確保索引正確
     } else {
-      historyIndex = drawingHistory.length - 1;
+      historyIndex = drawingHistory.length - 1; // 更新當前索引
     }
   }
 
+  // - 修正：復原繪圖 -
   function undoDrawing() {
-    if (drawingHistory.length === 0) return;
+    if (drawingHistory.length === 0) {
+      console.log("沒有可復原的狀態。");
+      return; // 如果沒有歷史記錄，直接返回
+    }
 
     if (historyIndex > 0) {
+      // 從歷史記錄中恢復到上一個狀態
       historyIndex--;
+      const drawingContext = drawingCanvas.getContext('2d'); // 確保獲取當前上下文
       drawingContext.putImageData(drawingHistory[historyIndex], 0, 0);
     } else if (historyIndex === 0) {
+      // 如果是第一個狀態，則清空畫布，並將索引設為 -1（表示空狀態）
+      const drawingContext = drawingCanvas.getContext('2d'); // 確保獲取當前上下文
       drawingContext.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-      historyIndex = -1;
+      historyIndex = -1; // 索引歸-1，表示空狀態
     }
+    // 如果 historyIndex 已經是 -1，則不做任何事
   }
 
+  // 在 initDrawingTools 函數中，找到 drawingTools 的按鈕部分，添加復原按鈕的事件監聽器
   document.getElementById('undoBtn')?.addEventListener('click', undoDrawing);
+
+  // 初始化繪圖狀態
+  // 定義大小選項和基準值
+  const sizeOptions = [
+    { display: "1", factor: 0.2 },
+    { display: "3", factor: 0.3 },
+    { display: "5", factor: 0.5 },
+    { display: "8", factor: 0.8 },
+    { display: "12", factor: 1.2 },
+    { display: "20", factor: 2.0 },
+    { display: "30", factor: 3.0 },
+    { display: "50", factor: 5.0 }
+  ];
+
+  // 定義基準粗細
+  const baseBrushSize = 5; // 筆的基準粗細
+  const baseEraserSize = 100; // 橡皮擦的基準粗細（需求二：預設為100）
 
   let isDrawing = false;
   let lastX = 0;
   let lastY = 0;
-  let currentColor = 'rgba(255, 0, 0, 0.8)'; // 默認紅色
-  let brushSize = 5; 
+  let currentColor = 'rgba(255, 0, 0, 0.8)'; // 預設紅色
+  let brushSize = baseBrushSize * 1.0; // 初始為基準大小（對應數字10）
   let isEraser = false;
   
+  // 當前選擇的大小索引（初始對應第4個選項，顯示為10）
+  let currentSizeIndex = 4; // 對應顯示為"10"的選項
+
+  // --- 新增：用於復原 ---
   let drawingHistory = [];
   let historyIndex = -1;
-  const maxHistorySteps = 50;
+  const maxHistorySteps = 50; // 限制歷史步數，防止記憶體過大
 
+  // 設定canvas樣式
   drawingCanvas.style.position = 'absolute';
   drawingCanvas.style.top = '0';
   drawingCanvas.style.left = '0';
-  drawingCanvas.style.pointerEvents = 'none';
+  drawingCanvas.style.pointerEvents = 'none'; // 默認不接收事件
 
+  // 在toggleDrawingToolsBtn的點擊事件中添加
   toggleDrawingToolsBtn.addEventListener('click', () => {
     const isHidden = drawingCanvasContainer.classList.contains('hidden');
     drawingCanvasContainer.classList.toggle('hidden');
     drawingTools.classList.toggle('hidden');
     
     if (isHidden) {
+      // 顯示繪圖工具
       drawingCanvas.style.pointerEvents = 'auto';
       resizeCanvas();
     } else {
+      // 隱藏繪圖工具
       closeDrawingTools();
     }
   });
 
+  // 添加雙擊關閉繪畫模式功能
   document.getElementById('drawingCanvasContainer').addEventListener('dblclick', function(e) {
+    // 如果畫布容器可見，則雙擊關閉
     if (!drawingCanvasContainer.classList.contains('hidden')) {
       e.preventDefault();
-      e.stopPropagation();
-      closeDrawingTools();
+      e.stopPropagation(); // 重要：阻止事件冒泡
+      closeDrawingTools(); // 使用統一的關閉函數
     }
   });
 
+  // 同樣為全屏容器添加雙擊關閉（任意位置雙擊）
   document.getElementById('fullscreenAnswers').addEventListener('dblclick', function(e) {
+    // 檢查雙擊目標是否是畫布或畫布容器
     const drawingCanvas = document.getElementById('drawingCanvas');
     const drawingCanvasContainer = document.getElementById('drawingCanvasContainer');
     
     if (e.target === drawingCanvas || 
         e.target === drawingCanvasContainer ||
         drawingCanvasContainer.contains(e.target)) {
+      // 雙擊畫布區域，關閉繪圖模式
       if (!drawingCanvasContainer.classList.contains('hidden')) {
         e.preventDefault();
         e.stopPropagation();
@@ -3293,120 +3320,84 @@ function initDrawingTools() {
     }
   });
 
-  // --- 色彩選擇器邏輯 ---
-  const colorBtn = document.getElementById('colorBtn');
-  const colorPalette = document.getElementById('colorPalette');
-  
-  // 顯示/隱藏色彩盤
-  colorBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    // 關閉其他彈窗
-    document.getElementById('strokeSliderContainer').classList.add('hidden');
-    colorPalette.classList.toggle('hidden');
-  });
-
-  // 生成色彩選項
-  const colors = [
-    'rgba(255, 0, 0, 0.8)',   // 紅
-    'rgba(0, 0, 255, 0.8)',   // 藍
-    'rgba(0, 128, 0, 0.8)',   // 綠
-    'rgba(0, 0, 0, 0.8)',     // 黑
-    'rgba(255, 165, 0, 0.8)', // 橙
-    'rgba(128, 0, 128, 0.8)', // 紫
-    'rgba(255, 192, 203, 0.8)', // 粉
-    'rgba(139, 69, 19, 0.8)'  // 棕
-  ];
-
-  const paletteGrid = colorPalette.querySelector('.grid');
-  paletteGrid.innerHTML = '';
-  colors.forEach(color => {
-      const swatch = document.createElement('div');
-      swatch.className = 'w-8 h-8 rounded-full cursor-pointer border border-gray-200 hover:scale-110 transition-transform';
-      swatch.style.backgroundColor = color;
-      swatch.addEventListener('click', (e) => {
-          e.stopPropagation();
-          isEraser = false;
-          currentColor = color;
-          
-          // 更新按鈕顯示
-          colorBtn.style.backgroundColor = color;
-          // 確保文字顏色對比度
-          const icon = colorBtn.querySelector('i');
-          icon.style.color = 'white';
-          icon.style.textShadow = '0 1px 2px rgba(0,0,0,0.5)';
-          
-          document.getElementById('eraserBtn').classList.remove('border-2', 'border-gray-700');
-          colorBtn.classList.add('border-2', 'border-gray-400');
-          
-          colorPalette.classList.add('hidden');
-          
-          if (!drawingCanvasContainer.classList.contains('hidden')) {
-              drawingContext.globalCompositeOperation = 'source-over';
-              drawingContext.lineWidth = brushSize;
-          }
-      });
-      paletteGrid.appendChild(swatch);
-  });
-
-  // 橡皮擦按鈕
-  document.getElementById('eraserBtn').addEventListener('click', () => {
-    isEraser = true;
+  // 紅筆按鈕事件
+  document.getElementById('redPenBtn').addEventListener('click', () => {
+    isEraser = false;
     
-    // 更新UI
-    colorBtn.classList.remove('border-2', 'border-gray-400');
-    document.getElementById('eraserBtn').classList.add('border-2', 'border-gray-700');
+    // 根據當前選擇的大小索引計算筆的實際大小
+    const sizeOption = sizeOptions[currentSizeIndex];
+    brushSize = baseBrushSize * sizeOption.factor;
     
+    currentColor = 'rgba(255, 0, 0, 0.8)';
+    document.getElementById('redPenBtn').classList.add('border-2', 'border-red-700');
+    document.getElementById('eraserBtn').classList.remove('border-2', 'border-gray-700');
+    
+    // 更新繪圖上下文
     if (!drawingCanvasContainer.classList.contains('hidden')) {
-      drawingContext.globalCompositeOperation = 'destination-out';
-      drawingContext.lineWidth = brushSize; 
+      drawingContext.globalCompositeOperation = 'source-over';
+      drawingContext.lineWidth = brushSize;
     }
   });
 
-  // 清除按鈕
+  // 橡皮擦按鈕事件
+  document.getElementById('eraserBtn').addEventListener('click', () => {
+    isEraser = true;
+    
+    // 預設使用100（對應 sizeOptions 中 factor 為 5.0 的選項）
+    currentSizeIndex = 7; // 指向 "50" 的選項，因為 50 * 2 = 100（基準為2倍）
+    
+    // 更新按鈕顯示
+    const brushSizeBtn = document.getElementById('brushSize');
+    if (brushSizeBtn) {
+      brushSizeBtn.dataset.value = "50";
+      brushSizeBtn.textContent = "50";
+    }
+    
+    // 設置橡皮擦大小為100
+    brushSize = baseEraserSize * 1.0; // 100像素
+    
+    document.getElementById('redPenBtn').classList.remove('border-2', 'border-red-700');
+    document.getElementById('eraserBtn').classList.add('border-2', 'border-gray-700');
+    
+    // 更新繪圖上下文
+    if (!drawingCanvasContainer.classList.contains('hidden')) {
+      drawingContext.globalCompositeOperation = 'destination-out';
+      drawingContext.lineWidth = brushSize;
+    }
+  });
+
+  // 清除畫布按鈕事件
   document.getElementById('clearCanvasBtn').addEventListener('click', () => {
     if (confirm('確定要清除所有批註嗎？')) {
       clearCanvas();
     }
   });
 
-  // --- 粗細滑桿邏輯 ---
-  const strokeBtn = document.getElementById('strokeBtn');
-  const strokeSliderContainer = document.getElementById('strokeSliderContainer');
-  const strokeSlider = document.getElementById('strokeSlider');
-  const strokePreview = document.getElementById('strokePreview');
-
-  strokeBtn.addEventListener('click', (e) => {
+  // 筆刷大小按鈕事件
+  document.getElementById('brushSize')?.addEventListener('click', function(e) {
     e.stopPropagation();
-    // 關閉其他彈窗
-    colorPalette.classList.add('hidden');
-    strokeSliderContainer.classList.toggle('hidden');
+    
+    // 循環到下一個大小選項
+    currentSizeIndex = (currentSizeIndex + 1) % sizeOptions.length;
+    const sizeOption = sizeOptions[currentSizeIndex];
+    
+    this.dataset.value = sizeOption.display;
+    this.textContent = sizeOption.display;
+    
+    // 根據當前模式計算實際大小
+    if (isEraser) {
+      brushSize = baseEraserSize * sizeOption.factor;
+    } else {
+      brushSize = baseBrushSize * sizeOption.factor;
+    }
+    
+    // 確保繪圖上下文線寬更新
+    if (!drawingCanvasContainer.classList.contains('hidden')) {
+      drawingContext.lineWidth = brushSize;
+    }
   });
 
-  strokeSlider.addEventListener('input', function() {
-      const size = parseInt(this.value);
-      brushSize = size;
-      
-      // 更新預覽圓點大小
-      // 限制預覽圓點最大顯示尺寸，避免撐爆按鈕
-      const displaySize = Math.min(24, Math.max(4, size / 2)); 
-      strokePreview.style.fontSize = displaySize + 'px';
-      
-      if (!drawingCanvasContainer.classList.contains('hidden')) {
-          drawingContext.lineWidth = brushSize;
-      }
-  });
-
-  // 點擊外部關閉彈窗
-  document.addEventListener('click', (e) => {
-      if (!colorPalette.contains(e.target) && e.target !== colorBtn && !colorBtn.contains(e.target)) {
-          colorPalette.classList.add('hidden');
-      }
-      if (!strokeSliderContainer.contains(e.target) && e.target !== strokeBtn && !strokeBtn.contains(e.target)) {
-          strokeSliderContainer.classList.add('hidden');
-      }
-  });
-
-  // 繪圖核心功能
+  // 繪圖功能
   function startDrawing(e) {
     if (drawingCanvasContainer.classList.contains('hidden')) return;
     
@@ -3415,8 +3406,10 @@ function initDrawingTools() {
     lastX = (e.clientX || e.touches[0].clientX) - rect.left;
     lastY = (e.clientY || e.touches[0].clientY) - rect.top;
 
+    // 確保繪圖上下文使用正確的線寬
     drawingContext.lineWidth = brushSize;
     
+    // 開始時也繪製一個點，確保大小正確
     drawingContext.beginPath();
     drawingContext.arc(lastX, lastY, brushSize/2, 0, Math.PI * 2);
     if (isEraser) {
@@ -3431,7 +3424,7 @@ function initDrawingTools() {
 
   function draw(e) {
     if (!isDrawing) return;
-    e.preventDefault();
+    e.preventDefault(); // 確保阻止默認行為
     const rect = drawingCanvas.getBoundingClientRect();
     const currentX = (e.clientX || e.touches[0].clientX) - rect.left;
     const currentY = (e.clientY || e.touches[0].clientY) - rect.top;
@@ -3442,15 +3435,15 @@ function initDrawingTools() {
 
     if (isEraser) {
       drawingContext.globalCompositeOperation = 'destination-out';
-      drawingContext.strokeStyle = 'rgba(0,0,0,1)';
-      drawingContext.lineWidth = brushSize;
+      drawingContext.strokeStyle = 'rgba(0,0,0,1)'; // 橡皮擦顏色不重要
+      drawingContext.lineWidth = brushSize; // 使用當前的 brushSize
     } else {
       drawingContext.globalCompositeOperation = 'source-over';
       drawingContext.strokeStyle = currentColor;
-      drawingContext.lineWidth = brushSize;
+      drawingContext.lineWidth = brushSize; // 使用當前的 brushSize
     }
-    drawingContext.lineCap = 'round';
-    drawingContext.lineJoin = 'round';
+    drawingContext.lineCap = 'round'; // 確保線條端點是圓形
+    drawingContext.lineJoin = 'round'; // 確保線條連接處是圓形
     drawingContext.stroke();
     lastX = currentX;
     lastY = currentY;
@@ -3458,20 +3451,27 @@ function initDrawingTools() {
 
   function stopDrawing() {
     isDrawing = false;
+    // 在停止繪圖時保存狀態
     saveDrawingState();
   }
 
+  // 清除canvas
   function clearCanvas() {
     drawingContext.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
   }
 
+  // 設置事件監聽
   drawingCanvas.addEventListener('mousedown', startDrawing);
   drawingCanvas.addEventListener('mousemove', draw);
   drawingCanvas.addEventListener('mouseup', stopDrawing);
   drawingCanvas.addEventListener('mouseout', stopDrawing);
 
+  // 觸控事件
+  // 修改觸控事件處理 - 確保阻止默認行為和正確處理觸摸點
   drawingCanvas.addEventListener('touchstart', (e) => {
     if (drawingCanvasContainer.classList.contains('hidden') || e.touches.length > 1) return;
+    
+    // 阻止所有觸摸事件的默認行為（防止滾動）
     e.preventDefault();
     e.stopPropagation();
     
@@ -3480,6 +3480,7 @@ function initDrawingTools() {
     lastX = touch.clientX - rect.left;
     lastY = touch.clientY - rect.top;
     
+    // 立即繪製一個點
     drawingContext.beginPath();
     drawingContext.arc(lastX, lastY, brushSize/2, 0, Math.PI * 2);
     drawingContext.fillStyle = currentColor;
@@ -3490,6 +3491,8 @@ function initDrawingTools() {
 
   drawingCanvas.addEventListener('touchmove', (e) => {
     if (!isDrawing || e.touches.length > 1) return;
+    
+    // 阻止所有觸摸移動的默認行為
     e.preventDefault();
     e.stopPropagation();
     
@@ -3498,6 +3501,7 @@ function initDrawingTools() {
     const currentX = touch.clientX - rect.left;
     const currentY = touch.clientY - rect.top;
     
+    // 繪製線條
     drawingContext.beginPath();
     drawingContext.moveTo(lastX, lastY);
     drawingContext.lineTo(currentX, currentY);
@@ -3531,12 +3535,14 @@ function initDrawingTools() {
     stopDrawing();
   });
 
+  // 添加防止頁面滾動的事件監聽器
   document.addEventListener('touchmove', function(e) {
     if (!drawingCanvasContainer.classList.contains('hidden') && isDrawing) {
       e.preventDefault();
     }
   }, { passive: false });
 
+  // 全屏滾動時更新canvas位置
   const answersList = document.getElementById('fullscreenAnswersList');
   answersList.addEventListener('scroll', () => {
     if (!drawingCanvasContainer.classList.contains('hidden')) {
@@ -3544,6 +3550,7 @@ function initDrawingTools() {
     }
   });
 
+  // 當進入全屏時調整canvas
   document.getElementById('fullscreenToggle').addEventListener('click', () => {
     setTimeout(() => {
       if (!document.getElementById('fullscreenAnswers').classList.contains('hidden')) {
@@ -3552,12 +3559,14 @@ function initDrawingTools() {
     }, 300);
   });
 
+  // 當關閉全屏時重置canvas
   document.getElementById('closeFullscreen').addEventListener('click', () => {
     clearCanvas();
     drawingCanvasContainer.classList.add('hidden');
     drawingTools.classList.add('hidden');
   });
 
+  // 初始隱藏工具
   drawingCanvasContainer.classList.add('hidden');
   drawingTools.classList.add('hidden');
 }
@@ -3744,57 +3753,58 @@ document.getElementById('fullscreenToggle').addEventListener('click', function()
   <div id="drawingCanvasContainer" class="fixed inset-0 pointer-events-none z-40 hidden">
     <canvas id="drawingCanvas" class="absolute inset-0 w-full h-full"></canvas>
   </div>
-  
-  <!-- 繪圖工具面板 (修訂版) -->
+  <!-- 繪圖工具面板 -->
   <div id="drawingTools" class="fixed bottom-6 right-6 z-50 bg-paper p-3 rounded-xl shadow-lg border border-stone-gray hidden">
-    <!-- Popups for Color and Size (Absolute positioned relative to this container) -->
-    
-    <!-- 色彩選擇盤 -->
-    <div id="colorPalette" class="hidden absolute right-full bottom-0 mr-3 mb-0 bg-white p-3 rounded-lg shadow-xl w-48 border border-gray-200">
-        <div class="grid grid-cols-4 gap-2">
-            <!-- Colors generated by JS -->
-        </div>
-    </div>
-
-    <!-- 粗細滑桿 -->
-    <div id="strokeSliderContainer" class="hidden absolute right-full bottom-20 mr-3 mb-0 bg-white p-4 rounded-lg shadow-xl w-48 h-16 flex items-center border border-gray-200">
-        <input type="range" id="strokeSlider" min="1" max="50" value="5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-    </div>
-
-    <!-- Toolbar Buttons (Unified Style) -->
-    <div class="flex flex-col gap-3 relative">
-      <!-- Color Picker Button -->
-      <button id="colorBtn" class="w-12 h-12 rounded-full shadow-md active:scale-95 transition-transform border-2 border-gray-200 flex items-center justify-center relative overflow-hidden" style="background-color: rgba(255, 0, 0, 0.8);">
-         <i class="fas fa-pen text-white drop-shadow-md"></i>
+    <div class="flex flex-col gap-3">
+      <button id="redPenBtn" class="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white shadow-md hover:bg-red-600 active:scale-95 transition-transform border-2 border-red-700">
+        <i class="fas fa-pen"></i>
       </button>
-
-      <!-- Eraser Button -->
-      <button id="eraserBtn" class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 shadow-md hover:bg-gray-200 active:scale-95 transition-transform border-2 border-transparent">
+      <button id="eraserBtn" class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 shadow-md hover:bg-gray-400 active:scale-95 transition-transform border-2 border-gray-400">
         <i class="fas fa-eraser"></i>
       </button>
-
-      <!-- Stroke Size Button (With visual dot) -->
-      <button id="strokeBtn" class="w-12 h-12 rounded-full bg-earth-beige flex items-center justify-center text-charcoal shadow-md hover:bg-gray-100 active:scale-95 transition-transform border-2 border-transparent">
-        <i id="strokePreview" class="fas fa-circle text-charcoal" style="font-size: 6px;"></i>
-      </button>
-
-      <!-- Undo Button -->
-      <button id="undoBtn" class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shadow-md hover:bg-blue-100 active:scale-95 transition-transform border-2 border-transparent">
-         <i class="fas fa-undo"></i>
-      </button>
-      
-      <!-- Clear Button -->
-      <button id="clearCanvasBtn" class="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-600 shadow-md hover:bg-red-100 active:scale-95 transition-transform border-2 border-transparent">
+      <button id="clearCanvasBtn" class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 shadow-md hover:bg-gray-300 active:scale-95 transition-transform border-2 border-gray-300">
         <i class="fas fa-trash"></i>
       </button>
-      
-      <!-- Close Tools Button -->
-      <button id="exitDrawingBtn" class="w-12 h-12 rounded-full bg-charcoal flex items-center justify-center text-white shadow-md hover:bg-gray-700 active:scale-95 transition-transform border-2 border-transparent">
-        <i class="fas fa-times"></i>
-      </button>
+      <button id="undoBtn" class="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 shadow-md hover:bg-blue-300 active:scale-95 transition-transform border-2 border-blue-300">
+    <i class="fas fa-undo"></i>
+</button>
+  <div class="mt-2">
+  <button id="brushSize" class="w-12 h-12 rounded-full bg-earth-beige border-2 border-clay-brown/40 text-charcoal font-bold text-lg hover:border-clay-brown transition"
+          data-sizes="[1,3,5,8,12,20,30,50]" data-value="5">
+    5
+  </button>
+    <button id="exitDrawingBtn" class="w-12 h-12 rounded-full bg-gray-500 flex items-center justify-center text-white shadow-md hover:bg-gray-600 active:scale-95 transition-transform border-2 border-gray-400">
+    <i class="fas fa-times"></i> <!-- 或者使用其他圖示 -->
+</button>
+</div>
+
+<script>
+document.getElementById('brushSize')?.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const sizes = JSON.parse(this.dataset.sizes);
+    const current = parseInt(this.dataset.value);
+    const nextIndex = (sizes.indexOf(current) + 1) % sizes.length;
+    const newSize = sizes[nextIndex];
+    this.dataset.value = newSize;
+    this.textContent = newSize;
+
+    // --- 修正：更新大小並同步筆和橡皮擦 ---
+    if (isEraser) {
+        // 如果當前是橡皮擦模式，更新橡皮擦大小（與筆同步）
+        brushSize = newSize;
+        currentEraserSize = newSize; // 同步記錄橡皮擦大小
+    } else {
+        // 否則更新筆的大小
+        brushSize = newSize;
+        currentBrushSize = newSize; // 同步記錄筆大小
+    }
+
+    // 保存當前繪圖狀態到歷史 (可選，如果想在調整大小後也能復原)
+    // saveDrawingState(); // 如果需要此功能，請實現 saveDrawingState 函數
+});
+</script>
     </div>
   </div>
-
   <!-- 回答列表容器 -->
   <div id="fullscreenAnswersList" class="flex-1 overflow-y-auto p-6 bg-earth-beige relative z-30">
     <!-- 回答將在這裡動態生成 -->
@@ -3813,4 +3823,4 @@ document.getElementById('fullscreenToggle').addEventListener('click', function()
  
    
 </body>
-</html>
+  </html>
