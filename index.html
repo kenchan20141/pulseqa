@@ -3107,13 +3107,25 @@ function initDrawingTools() {
   const toggleDrawingToolsBtn = document.getElementById('toggleDrawingTools');
  
   // 設置canvas尺寸
-  function resizeCanvas() {
-    const container = document.getElementById('fullscreenAnswers');
-    drawingCanvas.width = container.clientWidth;
-    drawingCanvas.height = container.clientHeight;
-    drawingContext.lineCap = 'round';
-    drawingContext.lineJoin = 'round';
-  }
+ function resizeCanvas() {
+  const container = document.getElementById('fullscreenAnswers');
+  const rect = container.getBoundingClientRect();
+  
+  // 设置显示尺寸
+  drawingCanvas.style.width = rect.width + 'px';
+  drawingCanvas.style.height = rect.height + 'px';
+  
+  // 设置内部尺寸（考虑设备像素比）
+  const dpr = window.devicePixelRatio || 1;
+  drawingCanvas.width = rect.width * dpr;
+  drawingCanvas.height = rect.height * dpr;
+  
+  // 缩放上下文
+  drawingContext.scale(dpr, dpr);
+  
+  drawingContext.lineCap = 'round';
+  drawingContext.lineJoin = 'round';
+}
  
   // 初始化繪圖狀態
   let isDrawing = false;
@@ -3127,7 +3139,7 @@ function initDrawingTools() {
   drawingCanvas.style.position = 'absolute';
   drawingCanvas.style.top = '0';
   drawingCanvas.style.left = '0';
-  drawingCanvas.style.pointerEvents = 'none';
+  drawingCanvas.style.pointerEvents = 'auto';
  
   // 調整canvas大小
   window.addEventListener('resize', resizeCanvas);
@@ -3223,20 +3235,34 @@ function initDrawingTools() {
   drawingCanvas.addEventListener('mouseout', stopDrawing);
  
   // 觸控事件
-  drawingCanvas.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 1) {
-      startDrawing(e.touches[0]);
-    }
+// 替换现有的触摸事件处理
+drawingCanvas.addEventListener('touchstart', (e) => {
+  if (drawingCanvasContainer.classList.contains('hidden') || e.touches.length > 1) return;
+  e.preventDefault();
+  startDrawing({
+    clientX: e.touches[0].clientX,
+    clientY: e.touches[0].clientY
   });
- 
-  drawingCanvas.addEventListener('touchmove', (e) => {
-    if (e.touches.length === 1) {
-      draw(e.touches[0]);
-    }
+});
+
+drawingCanvas.addEventListener('touchmove', (e) => {
+  if (e.touches.length > 1) return;
+  e.preventDefault();
+  draw({
+    clientX: e.touches[0].clientX,
+    clientY: e.touches[0].clientY
   });
+});
  
   drawingCanvas.addEventListener('touchend', stopDrawing);
   drawingCanvas.addEventListener('touchcancel', stopDrawing);
+
+  // 這裡添加防止iPad上触摸时页面滚动的代碼
+document.getElementById('drawingCanvasContainer').addEventListener('touchmove', function(e) {
+  if (!drawingCanvasContainer.classList.contains('hidden')) {
+    e.preventDefault();
+  }
+}, { passive: false });
  
   // 全屏滾動時更新canvas位置
   const answersList = document.getElementById('fullscreenAnswersList');
@@ -3473,6 +3499,7 @@ document.getElementById('fullscreenToggle').addEventListener('click', function()
     const newSize = sizes[nextIndex];
     this.dataset.value = newSize;
     this.textContent = newSize;
+    brushSize = newSize; // 确保更新全局笔刷大小
     // 同步到你的繪圖變數
     if (window.setBrushSize) window.setBrushSize(newSize);
     else if (window.drawingContext) window.currentBrushSize = newSize;
