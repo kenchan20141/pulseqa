@@ -1175,6 +1175,52 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   color: var(--charcoal);
 }
 
+  .fullscreen-countdown-pulse {
+  animation: countdown-pulse 1s ease-in-out infinite;
+}
+/* 替換或更新全屏倒計時樣式 */
+@keyframes countdown-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+#fullscreenCountdownDisplay {
+  font-size: 50vh; /* 佔據60%視口高度，配合容器整體約80% */
+  max-height: 70vh;
+  max-width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-shadow: 0 0 40px rgba(251, 191, 36, 0.8), 0 0 60px rgba(251, 191, 36, 0.6);
+  letter-spacing: -0.05em;
+}
+
+/* 在小屏幕上縮小字體 */
+@media (max-width: 768px) {
+  #fullscreenCountdownDisplay {
+    font-size: 50vh;
+  }
+  #fullscreenCountdown h2 {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  #fullscreenCountdownDisplay {
+    font-size: 40vh;
+  }
+  #fullscreenCountdown h2 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+  }
+}
+
+#fullscreenCountdown h2 {
+  font-family: 'Noto Serif TC', serif;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
 
 
 </style>
@@ -1466,6 +1512,7 @@ const answerColors = [
   { border: '#8a8a65', bg: 'rgba(138, 138, 101, 0.08)' }  
 ];
 
+  let fullscreenTimer = null;
 let currentRoom = null;
 let currentUser = null;
 let isHost = false;
@@ -1742,6 +1789,36 @@ function applyFontSize() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+
+// 設置全屏倒計時按鈕
+const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
+if (remainingTimeDisplay) {
+  remainingTimeDisplay.style.cursor = 'pointer';
+  remainingTimeDisplay.title = '點擊放大顯示';
+  
+  remainingTimeDisplay.addEventListener('click', function(e) {
+    // 防止點擊觸發父元素事件
+    e.stopPropagation();
+    if (!sessionActive || !isHost) return;
+    openFullscreenCountdown();
+  });
+}
+
+// 初始化全屏倒計時按鈕
+const closeFullscreenCountdownBtn = document.getElementById('closeFullscreenCountdown');
+if (closeFullscreenCountdownBtn) {
+  closeFullscreenCountdownBtn.addEventListener('click', closeFullscreenCountdown);
+}
+
+// 按ESC鍵關閉全屏
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && !document.getElementById('fullscreenCountdown').classList.contains('hidden')) {
+    closeFullscreenCountdown();
+  }
+});
+
+
+  
   const savedFontSize = localStorage.getItem('answerFontSize');
   if (savedFontSize) {
     currentFontSize = parseFloat(savedFontSize);
@@ -1809,6 +1886,69 @@ function shouldUpdateParticipants(participants, currentHTML) {
   const currentItemCount = (currentHTML.match(/flex items-center justify-between/g) || []).length;
   return participantCount !== currentItemCount;
 }
+
+
+
+function openFullscreenCountdown() {
+  const fullscreenCountdown = document.getElementById('fullscreenCountdown');
+  const fullscreenCountdownDisplay = document.getElementById('fullscreenCountdownDisplay');
+  
+  // 設置初始值
+  const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
+  if (remainingTimeDisplay) {
+    fullscreenCountdownDisplay.textContent = remainingTimeDisplay.textContent;
+    
+    // 設置脈衝效果
+    if (remainingTime <= 5) {
+      fullscreenCountdownDisplay.classList.add('fullscreen-countdown-pulse');
+    }
+  }
+  
+  // 顯示全屏
+  fullscreenCountdown.classList.remove('hidden');
+  document.body.style.overflow = 'hidden'; // 防止背景滾動
+  
+  // 開始更新計時
+  clearInterval(fullscreenTimer);
+  fullscreenTimer = setInterval(updateFullscreenCountdown, 100);
+}
+
+function updateFullscreenCountdown() {
+  if (!sessionActive) {
+    closeFullscreenCountdown();
+    return;
+  }
+  
+  const fullscreenCountdownDisplay = document.getElementById('fullscreenCountdownDisplay');
+  const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
+  
+  if (remainingTimeDisplay && fullscreenCountdownDisplay) {
+    fullscreenCountdownDisplay.textContent = remainingTimeDisplay.textContent;
+    
+    // 根據剩餘時間更新樣式
+    if (remainingTime <= 5) {
+      fullscreenCountdownDisplay.style.color = '#ef4444'; // 紅色
+      fullscreenCountdownDisplay.style.textShadow = '0 0 50px rgba(239, 68, 68, 0.9), 0 0 70px rgba(239, 68, 68, 0.7)';
+    } else if (remainingTime <= 10) {
+      fullscreenCountdownDisplay.style.color = '#fbbf24'; // 黃色
+      fullscreenCountdownDisplay.style.textShadow = '0 0 50px rgba(251, 191, 36, 0.9), 0 0 70px rgba(251, 191, 36, 0.7)';
+    } else {
+      fullscreenCountdownDisplay.style.color = '#fbbf24'; // 黃色
+      fullscreenCountdownDisplay.style.textShadow = '0 0 40px rgba(251, 191, 36, 0.8), 0 0 60px rgba(251, 191, 36, 0.6)';
+    }
+  }
+}
+
+function closeFullscreenCountdown() {
+  const fullscreenCountdown = document.getElementById('fullscreenCountdown');
+  if (fullscreenCountdown) {
+    fullscreenCountdown.classList.add('hidden');
+  }
+  document.body.style.overflow = '';
+  clearInterval(fullscreenTimer);
+  fullscreenTimer = null;
+}
+  
 
 // Host UI Toggle Logic
 function toggleMode() {
@@ -2204,6 +2344,21 @@ function updateHostUI(roomData) {
   
   // 更新回答列表
   updateAnswersList(roomData.answers, roomData.participants);
+
+// 在 updateHostUI 函數末尾添加
+const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
+if (remainingTimeDisplay && !remainingTimeDisplay.dataset.clickHandlerAdded) {
+  remainingTimeDisplay.style.cursor = 'pointer';
+  remainingTimeDisplay.title = '點擊放大顯示';
+  remainingTimeDisplay.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (!sessionActive || !isHost) return;
+    openFullscreenCountdown();
+  });
+  remainingTimeDisplay.dataset.clickHandlerAdded = 'true';
+}
+
+  
 }
 
 function getStudentColor(studentName) {
@@ -2559,6 +2714,14 @@ async function startSession() {
 }
 
 async function endSession() {
+
+ // 關閉全屏倒計時
+  if (fullscreenTimer) {
+    clearInterval(fullscreenTimer);
+    fullscreenTimer = null;
+    closeFullscreenCountdown();
+  }
+  
   if (!isHost || !currentRoom) return;
   // 清除計時器
   if (timer) {
@@ -2576,6 +2739,15 @@ async function endSession() {
 }
 
 async function clearSession() {
+
+  // 關閉全屏倒計時
+  if (fullscreenTimer) {
+    clearInterval(fullscreenTimer);
+    fullscreenTimer = null;
+    closeFullscreenCountdown();
+  }
+
+  
   if (!isHost || !currentRoom) return;
   // 清除計時器
   if (timer) {
@@ -2707,6 +2879,14 @@ async function submitAnswer() {
 }
 
 async function leaveHost() {
+
+ // 關閉全屏倒計時
+  if (fullscreenTimer) {
+    clearInterval(fullscreenTimer);
+    fullscreenTimer = null;
+    closeFullscreenCountdown();
+  }
+  
   if (roomRef) {
     roomRef.off();
     roomRef = null;
@@ -2735,6 +2915,14 @@ async function leaveHost() {
 
   
 async function leaveStudent() {
+
+ // 關閉全屏倒計時
+  if (fullscreenTimer) {
+    clearInterval(fullscreenTimer);
+    fullscreenTimer = null;
+    closeFullscreenCountdown();
+  }
+  
 if (roomRef) {
 roomRef.off();
 roomRef = null;
@@ -2887,6 +3075,19 @@ document.getElementById('fullscreenToggle').addEventListener('click', function()
     <!-- 回答將在這裡動態生成 -->
   </div>
 </div>
+
+
+<!-- 替換全屏倒計時HTML -->
+<div id="fullscreenCountdown" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+  <div class="w-full h-full flex flex-col justify-center items-center px-8">
+    <h2 class="text-4xl md:text-5xl font-bold text-gray-300 mb-6 md:mb-8 opacity-90">回答剩餘時間</h2>
+    <div id="fullscreenCountdownDisplay" class="font-bold text-yellow-300 leading-none text-center w-full"></div>
+  </div>
+  <button id="closeFullscreenCountdown" class="absolute top-4 right-4 md:top-6 md:right-6 w-12 h-12 md:w-14 md:h-14 rounded-full bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center text-white text-xl md:text-2xl hover:bg-opacity-50 transition-all duration-300 z-10 border border-gray-700 hover:border-red-500">
+    <i class="fas fa-times"></i>
+  </button>
+</div>
+  
     
 </body>
 </html>
