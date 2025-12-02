@@ -3195,35 +3195,50 @@ function initDrawingTools() {
 }
 
 
-// --- 新增：保存繪圖狀態到歷史 ---
 function saveDrawingState() {
+    if (drawingCanvasContainer.classList.contains('hidden')) return; // 只在繪圖模式下保存
+
+    const drawingContext = drawingCanvas.getContext('2d'); // 確保獲取當前上下文
     // 獲取當前 canvas 的圖像數據
     const imageData = drawingContext.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
+
     // 更新歷史記錄
-    // 如果當前索引不是最後一個，則清除後面的記錄（例如，復原後再繪圖，則後續記錄失效）
+    // 如果當前索引不是最後一個，則清除後面的記錄
     if (historyIndex < drawingHistory.length - 1) {
         drawingHistory = drawingHistory.slice(0, historyIndex + 1);
     }
     drawingHistory.push(imageData);
+
     // 限制歷史記錄數量
     if (drawingHistory.length > maxHistorySteps) {
         drawingHistory.shift(); // 移除最早的一個記錄
+        historyIndex = drawingHistory.length - 1; // 確保索引正確
+    } else {
+        historyIndex = drawingHistory.length - 1; // 更新當前索引
     }
-    historyIndex = drawingHistory.length - 1; // 更新當前索引
 }
 
-// --- 新增：復原繪圖 ---
+// - 修正：復原繪圖 -
 function undoDrawing() {
+    if (drawingHistory.length === 0) {
+        console.log("沒有可復原的狀態。");
+        return; // 如果沒有歷史記錄，直接返回
+    }
+
     if (historyIndex > 0) {
+        // 從歷史記錄中恢復到上一個狀態
         historyIndex--;
+        const drawingContext = drawingCanvas.getContext('2d'); // 確保獲取當前上下文
         drawingContext.putImageData(drawingHistory[historyIndex], 0, 0);
     } else if (historyIndex === 0) {
-        // 如果是第一個狀態，則清空
+        // 如果是第一個狀態，則清空畫布，並將索引設為 -1（表示空狀態）
+        const drawingContext = drawingCanvas.getContext('2d'); // 確保獲取當前上下文
         drawingContext.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
         historyIndex = -1; // 索引歸-1，表示空狀態
     }
-    // 如果已經是初始狀態 (historyIndex < 0)，則不做任何事
+    // 如果 historyIndex 已經是 -1，則不做任何事
 }
+
 
 // 在 initDrawingTools 函數中，找到 drawingTools 的按鈕部分，添加復原按鈕的事件監聽器
 // 假設你的復原按鈕 id 是 'undoBtn'
@@ -3356,6 +3371,11 @@ document.getElementById('brushSize').addEventListener('click', (e) => {
     brushSize = currentBrushSize;
   }
 });
+
+  // *** 新增這一行：確保繪圖上下文的線寬即時更新 ***
+if (!drawingCanvasContainer.classList.contains('hidden')) { // 只有在繪圖模式下才更新
+    drawingContext.lineWidth = brushSize; // 將當前設定的大小應用到繪圖上下文
+}
  
   // 繪圖功能
  function startDrawing(e) {
@@ -3408,9 +3428,12 @@ document.getElementById('brushSize').addEventListener('click', (e) => {
 }
 
   
-  function stopDrawing() {
+ function stopDrawing() {
     isDrawing = false;
-  }
+    // *** 新增這一行：在停止繪圖時保存狀態 ***
+    saveDrawingState();
+    // *** 新增這一行：在停止繪圖時保存狀態 ***
+}
  
   // 清除canvas
   function clearCanvas() {
