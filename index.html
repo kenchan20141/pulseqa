@@ -1368,23 +1368,26 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
     <i class="fas fa-comments"></i>
   </div>
   <div class="answers-header">
-    <div class="answers-title-wrapper">
-      <h2 class="text-xl font-bold text-wabi">回答列表
-        <span class="text-base font-normal text-wabi-secondary ml-2">(剩餘時間: <span id="remainingTimeDisplay">10:00</span>)</span>
-      </h2>
-      <div class="font-controls">
-        <button class="font-btn decrease-font" title="縮小字體">
-          <i class="fas fa-font"></i>
-        </button>
-        <button class="font-btn increase-font" title="放大字體">
-          <i class="fas fa-font"></i><i class="fas fa-plus" style="font-size: 0.6em; margin-left: -2px;"></i>
-        </button>
-      </div>
+  <div class="answers-title-wrapper">
+    <h2 class="text-xl font-bold text-wabi">回答列表
+      <span class="text-base font-normal text-wabi-secondary ml-2">( <span id="remainingTimeDisplay">10:00</span>)</span>
+    </h2>
+    <div class="font-controls">
+      <button class="font-btn decrease-font" title="縮小字體">
+        <i class="fas fa-font"></i>
+      </button>
+      <button class="font-btn increase-font" title="放大字體">
+        <i class="fas fa-font"></i><i class="fas fa-plus" style="font-size: 0.6em; margin-left: -2px;"></i>
+      </button>
+      <button onclick="downloadAllAnswers()" class="font-btn" title="下載所有回答">
+        <i class="fas fa-download"></i>
+      </button>
     </div>
-    <button id="fullscreenToggle" class="fullscreen-toggle-btn" title="全屏檢視回答">
-      <i class="fas fa-expand-arrows-alt"></i>
-    </button>
   </div>
+  <button id="fullscreenToggle" class="fullscreen-toggle-btn" title="全屏檢視回答">
+    <i class="fas fa-expand-arrows-alt"></i>
+  </button>
+</div>
 </div>
 <div id="answersList" class="space-y-5 max-h-[620px] overflow-y-auto pr-2">
 <!-- 學生回答將在此顯示 -->
@@ -1459,10 +1462,13 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
     <textarea id="studentAnswer" class="input-field w-full px-5 py-4 rounded-xl min-h-[160px] text-lg resize-y" placeholder="請在此輸入您的回答..." disabled></textarea>
   </div>
 </div>
-<div class="flex justify-center">
-<button id="submitBtn" onclick="submitAnswer()" class="wabi-sabi-button primary px-9 py-4.5 rounded-xl font-medium text-lg hidden" disabled>
-<i class="fas fa-paper-plane mr-2"></i>提交
-</button>
+<div class="flex justify-center gap-4">
+  <button onclick="downloadMyAnswer()" id="downloadMyAnswerBtn" class="wabi-sabi-button secondary px-6 py-3.5 rounded-xl font-medium text-base hidden">
+    <i class="fas fa-download mr-2"></i>下載
+  </button>
+  <button id="submitBtn" onclick="submitAnswer()" class="wabi-sabi-button primary px-9 py-4.5 rounded-xl font-medium text-lg hidden" disabled>
+    <i class="fas fa-paper-plane mr-2"></i>提交
+  </button>
 </div>
 <div id="submissionStatus" class="mt-7 text-lg font-medium text-wabi-secondary hidden">
 <i class="fas fa-check-circle text-moss-green mr-2"></i>已提交回答
@@ -2310,6 +2316,9 @@ function updateStudentUI(roomData) {
     hasSubmitted = false;
     submissionStatus.classList.add('hidden');
     answerInputArea.classList.remove('submitted', 'late');
+    // 隱藏下載按鈕
+    const downloadBtn = document.getElementById('downloadMyAnswerBtn');
+    if (downloadBtn) downloadBtn.classList.add('hidden');
     // 根據模式創建適當的輸入元素
     if (currentMode === 'qa') {
       const textarea = document.createElement('textarea');
@@ -2375,6 +2384,7 @@ function updateStudentUI(roomData) {
     timer = null;
     hideSharedScreen(); // 確保關閉共享畫面
   }
+
   // 輔助函數：禁用所有輸入
   function disableAllInputs() {
     const inputs = container.querySelectorAll('textarea, select, button');
@@ -2388,13 +2398,17 @@ function updateStudentUI(roomData) {
   // 輔助函數：如果未提交則啟用輸入
   function enableInputsIfNotSubmitted() {
     // 檢查學生是否已針對當前問題提交
+    const currentQID = roomData.session?.questionId ? String(roomData.session.questionId) : null;
     const hasSubmittedCurrentQuestion = 
       participant.submitted && 
       String(participant.lastQuestionId) === currentQID;
+      
     if (hasSubmittedCurrentQuestion) {
       // 已提交當前問題
       hasSubmitted = true;
       submissionStatus.classList.remove('hidden');
+      // 顯示下載按鈕
+      document.getElementById('downloadMyAnswerBtn').classList.remove('hidden');
       // 如果是超時提交，添加相應樣式
       if (participant.late) {
         answerInputArea.classList.add('late');
@@ -2410,6 +2424,8 @@ function updateStudentUI(roomData) {
       hasSubmitted = false;
       submissionStatus.classList.add('hidden');
       answerInputArea.classList.remove('submitted', 'late');
+      // 隱藏下載按鈕
+      document.getElementById('downloadMyAnswerBtn').classList.add('hidden');
       // 啟用輸入
       const inputs = container.querySelectorAll('textarea, select, button');
       inputs.forEach(el => {
@@ -3119,6 +3135,8 @@ async function submitAnswer() {
     
     document.getElementById('submitBtn').classList.add('hidden');
     answerInputArea.classList.add('submitted');
+    // 顯示下載按鈕
+    document.getElementById('downloadMyAnswerBtn').classList.remove('hidden');
     if (isLate) {
       answerInputArea.classList.add('late');
       submissionStatus.innerHTML = '<i class="fas fa-clock text-red-500 mr-2"></i>已超時提交';
@@ -3128,6 +3146,198 @@ async function submitAnswer() {
     alert('提交答案失敗,請重試');
   }
 }
+
+
+// 生成並下載HTML文件
+function downloadHTML(content, filename) {
+    const blob = new Blob([content], {type: 'text/html'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 0);
+}
+
+// 下載所有回答 (主持人使用)
+function downloadAllAnswers() {
+    if (!isHost || !currentRoom) return;
+    
+    database.ref('class_rooms/' + currentRoom).once('value').then(snapshot => {
+        const roomData = snapshot.val();
+        if (!roomData || !roomData.answers) return;
+        
+        // 構建HTML內容
+        let htmlContent = `
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>脈問堂 - 回答列表</title>
+    <style>
+        body { font-family: 'Noto Serif TC', sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .answer-card { margin-bottom: 30px; padding: 25px; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .student-name { font-size: 1.4em; font-weight: bold; margin-bottom: 10px; color: #5f6e55; display: flex; align-items: center; gap: 10px; }
+        .timestamp { color: #888; margin-bottom: 15px; }
+        .answer-content { margin-top: 15px; }
+        .rendered-outline-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .rendered-outline-table th, .rendered-outline-table td { 
+            border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: top;
+        }
+        .rendered-outline-table th { background-color: #f5f5f5; font-weight: bold; }
+        .late-tag { background-color: #f8d7da; color: #721c24; padding: 2px 8px; border-radius: 4px; font-size: 0.9em; }
+        .normal-tag { background-color: #d4edda; color: #155724; padding: 2px 8px; border-radius: 4px; font-size: 0.9em; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .room-info { background: #f9f6f1; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>脈問堂 - 所有回答列表</h1>
+        <div class="room-info">
+            <p><strong>房間代碼:</strong> ${currentRoom}</p>
+            <p><strong>問題:</strong> "${roomData.session.question || '無'}"</p>
+            <p><strong>導出時間:</strong> ${new Date().toLocaleString('zh-TW')}</p>
+        </div>
+    </div>
+    <hr style="margin: 30px 0;">
+        `;
+        
+        // 獲取答案並按照時間排序
+        const answersArray = Object.entries(roomData.answers)
+            .map(([name, answerData]) => ({ 
+                name, 
+                ...answerData,
+                late: roomData.participants?.[name]?.late || false
+            }))
+            .sort((a, b) => a.timestamp - b.timestamp);
+            
+        answersArray.forEach((answer, index) => {
+            const timestamp = new Date(answer.timestamp);
+            const timeString = timestamp.toLocaleString('zh-TW');
+            
+            htmlContent += `
+            <div class="answer-card">
+                <div class="student-name">
+                    ${answer.name} 
+                    ${answer.late ? 
+                        '<span class="late-tag"><i class="fas fa-clock mr-1"></i>超時</span>' : 
+                        '<span class="normal-tag"><i class="fas fa-check mr-1"></i>已提交</span>'
+                    }
+                </div>
+                <div class="timestamp">提交時間: ${timeString}</div>
+                <div class="answer-content">
+                    ${answer.text}
+                </div>
+            </div>
+            `;
+        });
+        
+        htmlContent += `
+</body>
+</html>
+        `;
+        
+        // 下載文件
+        downloadHTML(htmlContent, `脈問堂_回答列表_${currentRoom}_${new Date().toISOString().slice(0,10)}.html`);
+    }).catch(error => {
+        console.error('下載回答失敗:', error);
+        alert('下載回答失敗，請重試');
+    });
+}
+
+// 下載我的回答 (學生使用)
+function downloadMyAnswer() {
+    if (isHost || !currentRoom || !currentUser) return;
+    
+    Promise.all([
+        database.ref(`class_rooms/${currentRoom}/answers/${currentUser}`).once('value'),
+        database.ref(`class_rooms/${currentRoom}/session`).once('value'),
+        database.ref(`class_rooms/${currentRoom}/participants/${currentUser}`).once('value')
+    ]).then(([answerSnapshot, sessionSnapshot, participantSnapshot]) => {
+        const answerData = answerSnapshot.val();
+        const sessionData = sessionSnapshot.val();
+        const participantData = participantSnapshot.val();
+        
+        if (!answerData) {
+            alert('沒有可下載的回答');
+            return;
+        }
+        
+        const question = sessionData?.question || '無';
+        const isLate = participantData?.late || false;
+        
+        // 構建HTML內容
+        let htmlContent = `
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>脈問堂 - 我的回答</title>
+    <style>
+        body { font-family: 'Noto Serif TC', sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 0 auto; padding: 30px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .question { background-color: #f9f9f9; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 4px solid #5f6e55; }
+        .question-title { font-size: 1.2em; font-weight: bold; margin-bottom: 10px; color: #5f6e55; }
+        .my-answer { margin-top: 25px; }
+        .student-name { font-size: 1.5em; font-weight: bold; color: #8a7663; margin-bottom: 5px; }
+        .timestamp { color: #888; margin-bottom: 20px; }
+        .rendered-outline-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .rendered-outline-table th, .rendered-outline-table td { 
+            border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: top;
+        }
+        .rendered-outline-table th { background-color: #f5f5f5; font-weight: bold; }
+        .late-tag { background-color: #f8d7da; color: #721c24; padding: 2px 8px; border-radius: 4px; font-size: 0.9em; display: inline-flex; align-items: center; }
+        .normal-tag { background-color: #d4edda; color: #155724; padding: 2px 8px; border-radius: 4px; font-size: 0.9em; display: inline-flex; align-items: center; }
+        .room-info { background: #f9f6f1; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>脈問堂 - 我的回答</h1>
+        <div class="room-info">
+            <p><strong>房間代碼:</strong> ${currentRoom}</p>
+            <p><strong>姓名:</strong> ${currentUser}</p>
+            <p><strong>導出時間:</strong> ${new Date().toLocaleString('zh-TW')}</p>
+        </div>
+    </div>
+    
+    <div class="question">
+        <div class="question-title">問題內容</div>
+        <p>${question}</p>
+    </div>
+    
+    <div class="my-answer">
+        <div class="student-name">${currentUser}</div>
+        <div class="timestamp">提交時間: ${new Date(answerData.timestamp).toLocaleString('zh-TW')}</div>
+        ${isLate ? 
+            '<span class="late-tag"><i class="fas fa-clock mr-1"></i>超時提交</span>' : 
+            '<span class="normal-tag"><i class="fas fa-check mr-1"></i>按時提交</span>'
+        }
+        <div style="margin-top: 20px;">
+            ${answerData.text}
+        </div>
+    </div>
+</body>
+</html>
+        `;
+        
+        // 下載文件
+        downloadHTML(htmlContent, `脈問堂_我的回答_${currentUser}_${new Date().toISOString().slice(0,10)}.html`);
+    }).catch(error => {
+        console.error('下載回答失敗:', error);
+        alert('下載回答失敗，請重試');
+    });
+}
+
+
+
 
 async function leaveHost() {
 
@@ -3163,6 +3373,8 @@ async function leaveHost() {
   isHost = false;
   showMainMenu();
 }
+
+
 
   
 async function leaveStudent() {
@@ -3235,11 +3447,7 @@ document.body.addEventListener('click', function(event) {
 
 modalSaveBtn.addEventListener('click', saveAndCloseEditor);
 modalCloseBtn.addEventListener('click', closeModalEditor);
-modal.addEventListener('click', function(event) {
-    if (event.target === modal) {
-        closeModalEditor();
-    }
-});
+
 // End Modal Logic
 
 window.addEventListener('beforeunload', () => {
