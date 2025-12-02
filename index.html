@@ -1293,9 +1293,7 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
 </button>
 </div>
 </div>
-<div class="host-countdown-container hidden" id="hostCountdownContainer">
-<div class="host-countdown" id="hostCountdownDisplay">10:00</div>
-</div>
+
 </div>
 </div>
 </div>
@@ -1317,26 +1315,28 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
 </div>
 <div class="wabi-sabi-card p-7 fade-in" style="animation-delay: 0.1s">
   <div class="card-header mb-5">
-    <div class="card-icon">
-      <i class="fas fa-comments"></i>
-    </div>
-    <div class="answers-header">
-  <div class="answers-title-wrapper">
-    <h2 class="text-xl font-bold text-wabi">回答列表</h2>
-    <div class="font-controls">
-      <button class="font-btn decrease-font" title="縮小字體">
-        <i class="fas fa-font"></i>
-      </button>
-      <button class="font-btn increase-font" title="放大字體">
-        <i class="fas fa-font"></i><i class="fas fa-plus" style="font-size: 0.6em; margin-left: -2px;"></i>
-      </button>
-    </div>
+  <div class="card-icon">
+    <i class="fas fa-comments"></i>
   </div>
-  <button id="fullscreenToggle" class="fullscreen-toggle-btn" title="全屏檢視回答">
-    <i class="fas fa-expand-arrows-alt"></i>
-  </button>
+  <div class="answers-header">
+    <div class="answers-title-wrapper">
+      <h2 class="text-xl font-bold text-wabi">回答列表
+        <span class="text-base font-normal text-wabi-secondary ml-2">(剩餘時間: <span id="remainingTimeDisplay">10:00</span>)</span>
+      </h2>
+      <div class="font-controls">
+        <button class="font-btn decrease-font" title="縮小字體">
+          <i class="fas fa-font"></i>
+        </button>
+        <button class="font-btn increase-font" title="放大字體">
+          <i class="fas fa-font"></i><i class="fas fa-plus" style="font-size: 0.6em; margin-left: -2px;"></i>
+        </button>
+      </div>
+    </div>
+    <button id="fullscreenToggle" class="fullscreen-toggle-btn" title="全屏檢視回答">
+      <i class="fas fa-expand-arrows-alt"></i>
+    </button>
+  </div>
 </div>
-  </div>
 <div id="answersList" class="space-y-5 max-h-[620px] overflow-y-auto pr-2">
 <!-- 學生回答將在此顯示 -->
 <div class="text-center py-12 text-wabi-secondary">尚未開始</div>
@@ -2106,13 +2106,11 @@ function startLocalTimer(startTime, totalTime) {
   clearInterval(timer);
   lastQuestionStartTime = startTime;
   remainingTime = totalTime;
-  
   timer = setInterval(() => {
     const currentTime = Date.now();
     const elapsed = Math.floor((currentTime - startTime) / 1000);
     remainingTime = Math.max(0, totalTime - elapsed);
     updateCountdownDisplay(remainingTime);
-    
     if (remainingTime <= 0) {
       clearInterval(timer);
       timer = null;
@@ -2133,11 +2131,14 @@ function startLocalTimer(startTime, totalTime) {
   updateCountdownDisplay(remainingTime);
 }
 
+  
+
 function updateCountdownDisplay(seconds) {
   const minutes = Math.floor(seconds / 60);
   const secs = seconds % 60;
   const formattedTime = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-
+  
+  // 更新學生介面
   const studentCountdown = document.getElementById('studentCountdown');
   if (studentCountdown) {
     studentCountdown.textContent = formattedTime;
@@ -2152,121 +2153,56 @@ function updateCountdownDisplay(seconds) {
       studentCountdown.classList.remove('pulse');
     }
   }
-
-  const hostCountdownDisplay = document.getElementById('hostCountdownDisplay');
-  if (hostCountdownDisplay) {
-    hostCountdownDisplay.textContent = formattedTime;
+  
+  // 更新主持人介面 - 新的剩餘時間顯示
+  const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
+  if (remainingTimeDisplay) {
+    remainingTimeDisplay.textContent = formattedTime;
     if (seconds <= 5) {
-      hostCountdownDisplay.style.color = '#a86b6b';
-      hostCountdownDisplay.classList.add('pulse');
+      remainingTimeDisplay.style.color = '#a86b6b';
     } else if (seconds <= 10) {
-      hostCountdownDisplay.style.color = '#8a7663';
-      hostCountdownDisplay.classList.remove('pulse');
+      remainingTimeDisplay.style.color = '#8a7663';
     } else {
-      hostCountdownDisplay.style.color = '#383833';
-      hostCountdownDisplay.classList.remove('pulse');
+      remainingTimeDisplay.style.color = '#383833';
     }
   }
 }
 
 
-function startHostTimer(startTime, totalTime) {
-  // 防止重複開啟：如果已經有計時器在跑，先清除它
-  if (hostTimer) {
-    clearInterval(hostTimer);
-    hostTimer = null;
-  }
-  
-  // 立即執行一次以更新畫面
-  updateHostTimerLogic(startTime, totalTime);
-  
-  // 啟動循環，每秒更新一次
-  hostTimer = setInterval(() => {
-    updateHostTimerLogic(startTime, totalTime);
-  }, 1000);
-}
 
-function updateHostTimerLogic(startTime, totalTime) {
-  const currentTime = Date.now();
-  
-  // 【修正】加入 Math.max(0, ... )
-  // 目的：防止因為電腦時間比伺服器慢，導致算出 "負數" 的經過時間，
-  // 讓倒計時不會出現 "10:01" 這種反常現象。
-  const elapsed = Math.max(0, Math.floor((currentTime - startTime) / 1000));
-  
-  const remaining = Math.max(0, totalTime - elapsed);
-  
-  // 更新主持人的顯示界面
-  const hostCountdownDisplay = document.getElementById('hostCountdownDisplay');
-  if (hostCountdownDisplay) {
-    const minutes = Math.floor(remaining / 60);
-    const secs = remaining % 60;
-    const formattedTime = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    
-    hostCountdownDisplay.textContent = formattedTime;
-    
-    // 樣式處理 (紅色/脈衝效果)
-    if (remaining <= 5) {
-      hostCountdownDisplay.style.color = '#a86b6b';
-      hostCountdownDisplay.classList.add('pulse');
-    } else if (remaining <= 10) {
-      hostCountdownDisplay.style.color = '#8a7663';
-      hostCountdownDisplay.classList.remove('pulse');
-    } else {
-      hostCountdownDisplay.style.color = '#383833';
-      hostCountdownDisplay.classList.remove('pulse');
-    }
-  }
 
-  // 時間到自動停止計時器
-  if (remaining <= 0) {
-    if (hostTimer) {
-      clearInterval(hostTimer);
-      hostTimer = null;
-    }
-  }
-}
 
   
 
 function updateHostUI(roomData) {
-  // 檢查會話是否活躍且有開始時間
+  // 更新按鈕狀態
   if (roomData.session.active && roomData.session.startTime) {
-    // 顯示計時容器和暫停按鈕
-    document.getElementById('hostCountdownContainer').classList.remove('hidden');
     document.getElementById('startBtn').innerHTML = '<i class="fas fa-pause mr-2"></i>暫停';
     
-    // 【關鍵修復】：只有當 hostTimer 不存在時才啟動
-    // 這樣即使 Firebase 數據因為學生加入而頻繁更新，也不會導致計時器疊加
-    if (!hostTimer) {
-      startHostTimer(roomData.session.startTime, roomData.session.timeLimit);
+    // 檢查是否需要啟動計時器
+    if (!timer) {
+      const now = Date.now();
+      const elapsed = Math.floor((now - roomData.session.startTime) / 1000);
+      remainingTime = Math.max(0, roomData.session.timeLimit - elapsed);
+      
+      // 只在會話活動時啟動計時器
+      if (roomData.session.active) {
+        startLocalTimer(roomData.session.startTime, roomData.session.timeLimit);
+      }
     }
   } else {
-    // 如果會話停止，清除主持人計時器
-    if (hostTimer) {
-      clearInterval(hostTimer);
-      hostTimer = null;
-    }
+    // 會話未活動
+    clearInterval(timer);
+    timer = null;
     
-    // 重置顯示為設定的時間（靜態顯示）
-    // 這裡我們直接計算要顯示的靜態時間，不依賴全局 remainingTime
-    const limit = roomData.session.timeLimit || timeLimit;
-    const minutes = Math.floor(limit / 60);
-    const secs = limit % 60;
-    const formattedTime = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    
-    const hostDisplay = document.getElementById('hostCountdownDisplay');
-    if (hostDisplay) {
-        hostDisplay.textContent = formattedTime;
-        hostDisplay.style.color = '#383833';
-        hostDisplay.classList.remove('pulse');
-    }
+    // 重置剩餘時間為設定的時間限制
+    remainingTime = roomData.session.timeLimit || timeLimit;
+    updateCountdownDisplay(remainingTime);
     
     document.getElementById('startBtn').innerHTML = '<i class="fas fa-play mr-2"></i>開始';
-    document.getElementById('hostCountdownContainer').classList.add('hidden');
   }
   
-  // 更新學生回答列表
+  // 更新回答列表
   updateAnswersList(roomData.answers, roomData.participants);
 }
 
@@ -2551,30 +2487,26 @@ function updateAnswersList(answers, participants) {
 
 async function startSession() {
   if (!isHost || !currentRoom) return;
-  
   const question = document.getElementById('questionInput').value.trim();
   if (!question) {
     alert('請輸入問題內容');
     return;
   }
-  
   const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
   const seconds = parseInt(document.getElementById('secondsInput').value) || 0;
   timeLimit = minutes * 60 + seconds;
-  
   if (timeLimit <= 0) {
     alert('請設定有效的時間');
     return;
   }
-  
   const sessionRef = database.ref('class_rooms/' + currentRoom + '/session');
   const sessionSnapshot = await sessionRef.once('value');
   const currentSession = sessionSnapshot.val();
   
-  // 在切換狀態前，先確保清除本地計時器，避免邏輯衝突
-  if (hostTimer) {
-    clearInterval(hostTimer);
-    hostTimer = null;
+  // 清除現有計時器
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
   }
   
   if (currentSession.active) {
@@ -2583,19 +2515,15 @@ async function startSession() {
       active: false
     });
     sessionActive = false;
-    document.getElementById('hostCountdownContainer').classList.add('hidden');
   } else {
     // 開始會話
     const newQuestionId = Date.now();
     currentQuestionId = newQuestionId;
-    
     const mode = document.querySelector('input[name="questionMode"]:checked').value;
     const outlineType = document.querySelector('input[name="outlineType"]:checked').value;
-    
     const outlineConfig = {
         type: outlineType
     };
-
     await database.ref('class_rooms/' + currentRoom).update({
       answers: {}, 
       session: {
@@ -2609,12 +2537,10 @@ async function startSession() {
         outlineConfig: outlineConfig
       }
     });
-    
     // 重置所有參與者狀態
     const participantsRef = database.ref('class_rooms/' + currentRoom + '/participants');
     const participantsSnapshot = await participantsRef.once('value');
     const participants = participantsSnapshot.val() || {};
-    
     for (const name in participants) {
       if (participants.hasOwnProperty(name)) {
         await participantsRef.child(name).update({
@@ -2624,53 +2550,38 @@ async function startSession() {
         });
       }
     }
-    
     sessionActive = true;
     remainingTime = timeLimit;
     
-    // 這裡不需要手動調用 updateCountdownDisplay，
-    // 因為 Firebase 的監聽器會觸發 updateHostUI，進而啟動 hostTimer
-    document.getElementById('hostCountdownContainer').classList.remove('hidden');
+    // 立即更新顯示
+    updateCountdownDisplay(remainingTime);
   }
 }
 
 async function endSession() {
   if (!isHost || !currentRoom) return;
-  
-  // 清除主持人專用計時器
-  if (hostTimer) {
-    clearInterval(hostTimer);
-    hostTimer = null;
-  }
-  
-  // 清除學生端共用計時器變量 (雖然主持人不用這個，但保持乾淨)
+  // 清除計時器
   if (timer) {
     clearInterval(timer);
     timer = null;
   }
-
   sessionActive = false;
   await database.ref('class_rooms/' + currentRoom + '/session').update({
     active: false,
     endTime: firebase.database.ServerValue.TIMESTAMP
   });
-  document.getElementById('hostCountdownContainer').classList.add('hidden');
+  // 重置顯示
+  remainingTime = timeLimit;
+  updateCountdownDisplay(remainingTime);
 }
 
 async function clearSession() {
   if (!isHost || !currentRoom) return;
-  
-  // 清除主持人專用計時器
-  if (hostTimer) {
-    clearInterval(hostTimer);
-    hostTimer = null;
-  }
-  
+  // 清除計時器
   if (timer) {
     clearInterval(timer);
     timer = null;
   }
-  
   sessionActive = false;
   await database.ref('class_rooms/' + currentRoom).update({
     session: {
@@ -2683,7 +2594,6 @@ async function clearSession() {
     },
     answers: {}
   });
-
   const participantsRef = database.ref('class_rooms/' + currentRoom + '/participants');
   const participantsSnapshot = await participantsRef.once('value');
   const participants = participantsSnapshot.val() || {};
@@ -2696,19 +2606,16 @@ async function clearSession() {
       });
     }
   }
-
   // 重置 UI
   remainingTime = 600;
-  // 更新顯示為預設值
-  const hostDisplay = document.getElementById('hostCountdownDisplay');
-  if(hostDisplay) hostDisplay.textContent = "10:00";
-  
-  document.getElementById('hostCountdownContainer').classList.add('hidden');
+  updateCountdownDisplay(remainingTime);
   document.getElementById('questionInput').value = '';
   document.getElementById('minutesInput').value = '10';
   document.getElementById('secondsInput').value = '0';
 }
 
+
+  
 async function submitAnswer() {
   if (!currentRoom || !currentUser || isHost || hasSubmitted) return;
   
