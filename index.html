@@ -3375,11 +3375,11 @@ function initDrawingTools() {
 
   // 狀態變數
   let isDrawing = false;
-  let lastX = 0;
-  let lastY = 0;
+  let startX = 0;
+  let startY = 0;
   let currentTool = 'pen'; 
   
-  // 定義固定五種顏色
+  // 定義固定五種顏色（主色）
   const fixedColors = [
     '#FF0000', // 紅色
     '#0000FF', // 藍色
@@ -3388,10 +3388,20 @@ function initDrawingTools() {
     '#800080'  // 紫色
   ];
   let currentColorIndex = 0;
-  let currentColor = hexToRgba(fixedColors[currentColorIndex], 0.8);
   
+  // 對應的熒光筆顏色（使用更高的透明度）
+  const highlighterColors = [
+    'rgba(255, 0, 0, 0.4)',     // 紅色熒光筆
+    'rgba(0, 0, 255, 0.4)',     // 藍色熒光筆
+    'rgba(0, 255, 0, 0.4)',     // 綠色熒光筆
+    'rgba(255, 255, 0, 0.4)',  // 黃色熒光筆
+    'rgba(128, 0, 128, 0.4)'    // 紫色熒光筆
+  ];
+  
+  let currentColor = fixedColors[currentColorIndex];
   let penSize = 2;
   let eraserSize = 30;
+  let highlighterSize = 30; // 熒光筆高度（粗細）
   let isScrollMode = false;
 
   // 歷史記錄
@@ -3476,7 +3486,8 @@ function initDrawingTools() {
 
   // --- 更新 UI ---
   function updateUI() {
-    const redPenBtn = document.getElementById('redPenBtn');
+    const penBtn = document.getElementById('redPenBtn');
+    const highlighterBtn = document.getElementById('highlighterBtn');
     const eraserBtn = document.getElementById('eraserBtn');
     const scrollModeBtn = document.getElementById('scrollModeBtn');
     const slider = document.getElementById('brushSizeSlider');
@@ -3488,7 +3499,8 @@ function initDrawingTools() {
     
     if (isScrollMode) {
         scrollModeBtn.classList.add('active');
-        redPenBtn.classList.remove('active');
+        penBtn.classList.remove('active');
+        highlighterBtn.classList.remove('active');
         eraserBtn.classList.remove('active');
         drawingCanvasContainer.classList.remove('active-drawing');
         drawingCanvasContainer.classList.add('active-scroll'); 
@@ -3499,15 +3511,25 @@ function initDrawingTools() {
     }
 
     if (!isScrollMode) {
+        // 移除所有工具的 active 狀態
+        penBtn.classList.remove('active');
+        highlighterBtn.classList.remove('active');
+        eraserBtn.classList.remove('active');
+        
+        // 設置當前工具的 active 狀態
         if (currentTool === 'pen') {
-            redPenBtn.classList.add('active');
-            eraserBtn.classList.remove('active');
+            penBtn.classList.add('active');
             slider.value = penSize;
             indicator.style.width = Math.min(24, Math.max(4, penSize)) + 'px';
             indicator.style.height = Math.min(24, Math.max(4, penSize)) + 'px';
-            indicator.style.backgroundColor = currentColor;
-        } else {
-            redPenBtn.classList.remove('active');
+            indicator.style.backgroundColor = hexToRgba(fixedColors[currentColorIndex], 0.8);
+        } else if (currentTool === 'highlighter') {
+            highlighterBtn.classList.add('active');
+            slider.value = highlighterSize;
+            indicator.style.width = Math.min(24, Math.max(4, highlighterSize / 2)) + 'px';
+            indicator.style.height = Math.min(24, Math.max(4, highlighterSize / 2)) + 'px';
+            indicator.style.backgroundColor = highlighterColors[currentColorIndex];
+        } else if (currentTool === 'eraser') {
             eraserBtn.classList.add('active');
             slider.value = eraserSize;
             indicator.style.width = Math.min(24, Math.max(4, eraserSize / 2)) + 'px';
@@ -3515,6 +3537,58 @@ function initDrawingTools() {
             indicator.style.backgroundColor = '#888';
         }
     }
+  }
+
+  // --- 設置繪圖上下文 ---
+  function setDrawingContext() {
+    if (currentTool === 'pen') {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = hexToRgba(fixedColors[currentColorIndex], 0.8);
+      ctx.fillStyle = hexToRgba(fixedColors[currentColorIndex], 0.8);
+      ctx.lineWidth = penSize;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    } else if (currentTool === 'highlighter') {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = highlighterColors[currentColorIndex];
+      ctx.strokeStyle = highlighterColors[currentColorIndex];
+      ctx.lineWidth = 1;
+    } else if (currentTool === 'eraser') {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.strokeStyle = 'rgba(0,0,0,1)';
+      ctx.fillStyle = 'rgba(0,0,0,1)';
+      ctx.lineWidth = eraserSize;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    }
+    
+    feedbackCtx.globalCompositeOperation = 'source-over';
+    feedbackCtx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+    feedbackCtx.lineWidth = eraserSize;
+    feedbackCtx.lineCap = 'round';
+    feedbackCtx.lineJoin = 'round';
+  }
+
+  // --- 繪製熒光筆長方形 ---
+  function drawHighlighterRectangle(startX, startY, endX, endY, isPreview = false) {
+    // 計算長方形的座標和尺寸
+    const x = Math.min(startX, endX);
+    const y = Math.min(startY, endY);
+    const width = Math.abs(endX - startX);
+    const height = highlighterSize; // 使用設定的高度
+    
+    // 根據是否為預覽選擇畫布上下文
+    const targetCtx = isPreview ? feedbackCtx : ctx;
+    
+    // 設置繪圖屬性 - 使用相同的顏色
+    targetCtx.globalCompositeOperation = 'source-over';
+    
+    // 使用完全相同的顏色
+    const currentColor = highlighterColors[currentColorIndex];
+    targetCtx.fillStyle = currentColor;
+    
+    // 繪製半透明長方形
+    targetCtx.fillRect(x, y, width, height);
   }
 
   // --- 歷史記錄 ---
@@ -3578,6 +3652,7 @@ function initDrawingTools() {
         setTimeout(() => {
             resizeCanvas();
             isScrollMode = false; 
+            setDrawingContext();
             updateUI();
         }, 100);
     } else {
@@ -3593,23 +3668,37 @@ function initDrawingTools() {
     updateUI();
   });
 
+  // 畫筆按鈕
   document.getElementById('redPenBtn').addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
     isScrollMode = false;
     currentTool = 'pen';
+    setDrawingContext();
     updateUI();
   });
 
+  // 熒光筆按鈕
+  document.getElementById('highlighterBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isScrollMode = false;
+    currentTool = 'highlighter';
+    setDrawingContext();
+    updateUI();
+  });
+
+  // 橡皮擦按鈕
   document.getElementById('eraserBtn').addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
     isScrollMode = false;
     currentTool = 'eraser';
+    setDrawingContext();
     updateUI();
   });
 
-  // --- 修訂1：顏色選擇改為固定五種顏色循環切換 ---
+  // --- 顏色選擇：改為固定五種顏色循環切換 ---
   const colorBtn = document.getElementById('colorPreviewBtn');
   colorBtn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -3617,14 +3706,14 @@ function initDrawingTools() {
     
     // 切換到下一個顏色
     currentColorIndex = (currentColorIndex + 1) % fixedColors.length;
-    currentColor = hexToRgba(fixedColors[currentColorIndex], 0.8);
+    currentColor = fixedColors[currentColorIndex];
     
     // 更新按鈕顯示
-    colorBtn.style.backgroundColor = fixedColors[currentColorIndex];
+    colorBtn.style.backgroundColor = currentColor;
     
-    // 更新繪圖上下文顏色
-    ctx.strokeStyle = currentColor;
-    ctx.fillStyle = currentColor;
+    // 更新繪圖上下文
+    setDrawingContext();
+    updateUI();
   });
 
   // 隱藏顏色輸入框（如果有）
@@ -3633,7 +3722,7 @@ function initDrawingTools() {
     colorInput.style.display = 'none';
   }
 
-  // --- 修訂2：粗細調整滑桿顯示邏輯（加高工具列） ---
+  // --- 粗細調整滑桿顯示邏輯（加高工具列） ---
   const sizeToggleBtn = document.getElementById('sizeToggleBtn');
   const sliderPopup = document.getElementById('sizeSliderPopup');
   const slider = document.getElementById('brushSizeSlider');
@@ -3657,8 +3746,14 @@ function initDrawingTools() {
       // 顯示滑桿
       sliderPopup.classList.remove('hidden');
       
-      // 設置滑桿值
-      slider.value = currentTool === 'pen' ? penSize : eraserSize;
+      // 設置滑桿值為當前工具的粗細
+      if (currentTool === 'pen') {
+        slider.value = penSize;
+      } else if (currentTool === 'highlighter') {
+        slider.value = highlighterSize;
+      } else if (currentTool === 'eraser') {
+        slider.value = eraserSize;
+      }
       
       // 在 iPad 上，確保彈出框可見
       setTimeout(() => {
@@ -3681,9 +3776,12 @@ function initDrawingTools() {
     const val = parseInt(e.target.value);
     if (currentTool === 'pen') {
       penSize = val;
-    } else {
+    } else if (currentTool === 'highlighter') {
+      highlighterSize = val;
+    } else if (currentTool === 'eraser') {
       eraserSize = val;
     }
+    setDrawingContext();
     updateUI();
   });
 
@@ -3763,26 +3861,27 @@ function initDrawingTools() {
     isDrawing = true;
     
     const coords = getCoordinates(e);
-    lastX = coords.x;
-    lastY = coords.y;
-
-    const size = currentTool === 'pen' ? penSize : eraserSize;
-    ctx.lineWidth = size;
-    feedbackCtx.lineWidth = size;
-
-    ctx.beginPath();
-    ctx.arc(lastX, lastY, size / 2, 0, Math.PI * 2);
+    startX = coords.x;
+    startY = coords.y;
     
-    if (currentTool === 'eraser') {
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.fillStyle = 'rgba(0,0,0,1)';
-        ctx.fill();
-        ctx.globalCompositeOperation = 'source-over';
-    } else {
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.fillStyle = currentColor;
-        ctx.fill();
+    // 根據當前工具設置繪圖參數
+    setDrawingContext();
+    
+    // 如果是熒光筆，不需要畫起始點，直接開始拖拽
+    if (currentTool === 'pen') {
+      // 畫筆：畫起始圓點
+      ctx.beginPath();
+      ctx.arc(startX, startY, penSize / 2, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (currentTool === 'eraser') {
+      // 橡皮擦：畫起始圓點
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.arc(startX, startY, eraserSize / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
     }
+    // 熒光筆不需要起始點
     
     // 防止觸控設備的默認行為（如滾動）
     if (e.type.includes('touch')) {
@@ -3806,42 +3905,83 @@ function initDrawingTools() {
     const coords = getCoordinates(e);
     const currentX = coords.x;
     const currentY = coords.y;
-    const size = currentTool === 'pen' ? penSize : eraserSize;
-
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-    ctx.lineTo(currentX, currentY);
-    ctx.lineWidth = size;
-
-    if (currentTool === 'eraser') {
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.strokeStyle = 'rgba(0,0,0,1)';
-        ctx.stroke();
-        ctx.globalCompositeOperation = 'source-over';
-
-        feedbackCtx.beginPath();
-        feedbackCtx.moveTo(lastX, lastY);
-        feedbackCtx.lineTo(currentX, currentY);
-        feedbackCtx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
-        feedbackCtx.lineWidth = size;
-        feedbackCtx.stroke();
-    } else {
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.strokeStyle = currentColor;
-        ctx.stroke();
+    
+    // 處理不同工具的繪製
+    if (currentTool === 'pen') {
+      // 畫筆：繪製線條
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(currentX, currentY);
+      ctx.stroke();
+      startX = currentX;
+      startY = currentY;
+    } else if (currentTool === 'highlighter') {
+      // 熒光筆：在 feedbackCanvas 上顯示預覽長方形
+      // 清除之前的預覽
+      feedbackCtx.clearRect(0, 0, feedbackCanvas.width, feedbackCanvas.height);
+      
+      // 繪製預覽長方形
+      feedbackCtx.globalCompositeOperation = 'source-over';
+      feedbackCtx.fillStyle = highlighterColors[currentColorIndex];
+      const previewX = Math.min(startX, currentX);
+      const previewY = Math.min(startY, currentY);
+      const previewWidth = Math.abs(currentX - startX);
+      const previewHeight = highlighterSize;
+      feedbackCtx.fillRect(previewX, previewY, previewWidth, previewHeight);
+    } else if (currentTool === 'eraser') {
+      // 橡皮擦：清除內容並顯示反饋
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(currentX, currentY);
+      ctx.stroke();
+      ctx.globalCompositeOperation = 'source-over';
+      
+      // 顯示橡皮擦軌跡反饋
+      feedbackCtx.beginPath();
+      feedbackCtx.moveTo(startX, startY);
+      feedbackCtx.lineTo(currentX, currentY);
+      feedbackCtx.stroke();
+      
+      startX = currentX;
+      startY = currentY;
     }
-
-    lastX = currentX;
-    lastY = currentY;
   }
 
-  function stopDrawing() {
+  function stopDrawing(e) {
     if (!isDrawing) return;
     isDrawing = false;
-    saveDrawingState();
-    if (currentTool === 'eraser') {
-        setTimeout(() => feedbackCtx.clearRect(0, 0, feedbackCanvas.width, feedbackCanvas.height), 300);
+    
+    // 根據工具進行最終處理
+    if (currentTool === 'highlighter') {
+      // 熒光筆：繪製最終長方形到主畫布
+      const coords = getCoordinates(e);
+      const endX = coords.x;
+      const endY = coords.y;
+      
+      // 確保有足夠的寬度才繪製
+      if (Math.abs(endX - startX) > 5) {
+        // 繪製長方形到主畫布
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = highlighterColors[currentColorIndex];
+        const x = Math.min(startX, endX);
+        const y = Math.min(startY, endY);
+        const width = Math.abs(endX - startX);
+        const height = highlighterSize;
+        ctx.fillRect(x, y, width, height);
+      }
+      
+      // 清除預覽
+      feedbackCtx.clearRect(0, 0, feedbackCanvas.width, feedbackCanvas.height);
+    } else if (currentTool === 'eraser') {
+      // 清除橡皮擦反饋
+      setTimeout(() => {
+        feedbackCtx.clearRect(0, 0, feedbackCanvas.width, feedbackCanvas.height);
+      }, 300);
     }
+    
+    // 儲存繪圖狀態
+    saveDrawingState();
   }
 
   // 修正：為畫布添加正確的觸控事件監聽
@@ -3853,8 +3993,14 @@ function initDrawingTools() {
   // 修正：觸控事件處理，使用 { passive: false } 以便可以 preventDefault
   drawingCanvas.addEventListener('touchstart', startDrawing, { passive: false });
   drawingCanvas.addEventListener('touchmove', draw, { passive: false });
-  drawingCanvas.addEventListener('touchend', stopDrawing);
-  drawingCanvas.addEventListener('touchcancel', stopDrawing);
+  drawingCanvas.addEventListener('touchend', function(e) {
+    // 傳遞事件對象到 stopDrawing
+    stopDrawing(e);
+  });
+  drawingCanvas.addEventListener('touchcancel', function(e) {
+    // 傳遞事件對象到 stopDrawing
+    stopDrawing(e);
+  });
 
   // 初始化工具列狀態
   drawingCanvasContainer.classList.add('hidden');
@@ -3862,11 +4008,10 @@ function initDrawingTools() {
   
   // 初始化顏色按鈕的背景色
   colorBtn.style.backgroundColor = fixedColors[currentColorIndex];
-  ctx.strokeStyle = currentColor;
-  ctx.fillStyle = currentColor;
+  
+  // 初始化繪圖上下文
+  setDrawingContext();
 }
-
-
 
 // 監聽視窗大小改變，重新計算 Canvas 大小
 window.addEventListener('resize', () => {
@@ -4088,6 +4233,11 @@ document.getElementById('fullscreenToggle').addEventListener('click', function()
       <button id="redPenBtn" class="tool-btn active" title="畫筆">
           <i class="fas fa-pen"></i>
       </button>
+
+<!-- 新增：熒光筆按鈕 -->
+<button id="highlighterBtn" class="tool-btn" title="熒光筆">
+    <i class="fas fa-highlighter"></i>
+</button>
 
       <!-- 顏色選擇按鈕 -->
       <button id="colorPreviewBtn" class="tool-btn" title="更改顏色" style="background-color: rgba(255, 0, 0, 0.8);">
