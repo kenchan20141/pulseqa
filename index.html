@@ -1135,10 +1135,6 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   /* 關鍵：防止按鈕在空間不足時被壓縮變形 */
   flex-shrink: 0; 
   -webkit-tap-highlight-color: transparent;
-  /* 添加以下三行 */
-  touch-action: manipulation;
-  user-select: none;
-  -webkit-user-select: none;
 }
 
 .tool-btn:hover {
@@ -1206,6 +1202,8 @@ input[type=range]::-webkit-slider-thumb {
     padding: 8px 12px;
     gap: 10px; /* 稍微縮小間距 */
     border-radius: 30px;
+     z-index: 9999 !important;
+  pointer-events: auto !important;
   }
 
   .tool-btn {
@@ -3510,29 +3508,11 @@ function initDrawingTools() {
     updateUI();
   });
 
-  // 添加:
-document.getElementById('scrollModeBtn').addEventListener('touchend', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  isScrollMode = !isScrollMode;
-  updateUI();
-});
-
   document.getElementById('redPenBtn').addEventListener('click', () => {
     isScrollMode = false;
     currentTool = 'pen';
     updateUI();
   });
-
-  // 添加:
-document.getElementById('redPenBtn').addEventListener('touchend', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  isScrollMode = false;
-  currentTool = 'pen';
-  updateUI();
-});
-
 
   document.getElementById('eraserBtn').addEventListener('click', () => {
     isScrollMode = false;
@@ -3540,29 +3520,9 @@ document.getElementById('redPenBtn').addEventListener('touchend', (e) => {
     updateUI();
   });
 
-  // 添加:
-document.getElementById('eraserBtn').addEventListener('touchend', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  isScrollMode = false;
-  currentTool = 'eraser';
-  updateUI();
-});
-
- const colorBtn = document.getElementById('colorPreviewBtn');
-const colorInput = document.getElementById('colorInputHtml');
-
-colorBtn.addEventListener('click', (e) => {
-  e.stopPropagation();
-  colorInput.click();
-});
-
-// 添加觸控事件支援
-colorBtn.addEventListener('touchend', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  colorInput.click();
-});
+  const colorBtn = document.getElementById('colorPreviewBtn');
+  const colorInput = document.getElementById('colorInputHtml');
+  colorBtn.addEventListener('click', () => colorInput.click());
   colorInput.addEventListener('input', (e) => {
     currentColor = e.target.value;
     colorBtn.style.backgroundColor = currentColor;
@@ -3572,42 +3532,22 @@ colorBtn.addEventListener('touchend', (e) => {
   const sizeToggleBtn = document.getElementById('sizeToggleBtn');
   const sliderPopup = document.getElementById('sizeSliderPopup');
   const slider = document.getElementById('brushSizeSlider');
- sizeToggleBtn.addEventListener('click', (e) => {
-  e.stopPropagation();
-  e.preventDefault();
-  sliderPopup.classList.toggle('hidden');
-});
+  sizeToggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sliderPopup.classList.toggle('hidden');
+  });
+  document.addEventListener('click', (e) => {
+    if (!sizeToggleBtn.contains(e.target) && !sliderPopup.contains(e.target)) {
+        sliderPopup.classList.add('hidden');
+    }
+  });
+  slider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    if (currentTool === 'pen') penSize = val;
+    else eraserSize = val;
+    updateUI();
+  });
 
-// 添加觸控事件支援
-sizeToggleBtn.addEventListener('touchend', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  sliderPopup.classList.toggle('hidden');
-});
-function closeSliderPopup(e) {
-  if (!sizeToggleBtn.contains(e.target) && !sliderPopup.contains(e.target)) {
-    sliderPopup.classList.add('hidden');
-  }
-}
-
-document.addEventListener('click', closeSliderPopup);
-document.addEventListener('touchend', closeSliderPopup);
- slider.addEventListener('input', (e) => {
-  e.stopPropagation();
-  const val = parseInt(e.target.value);
-  if (currentTool === 'pen') penSize = val;
-  else eraserSize = val;
-  updateUI();
-});
-
-// 添加觸控優化
-slider.addEventListener('touchstart', (e) => {
-  e.stopPropagation();
-});
-
-slider.addEventListener('touchmove', (e) => {
-  e.stopPropagation();
-});
   document.getElementById('undoBtn').addEventListener('click', undoDrawing);
   document.getElementById('clearCanvasBtn').addEventListener('click', () => {
     if (confirm('確定要清空所有批註嗎？')) {
@@ -3699,6 +3639,15 @@ slider.addEventListener('touchmove', (e) => {
   drawingCanvas.addEventListener('touchend', stopDrawing);
 
   drawingCanvasContainer.classList.add('hidden');
+
+// 強制在 iOS 上啟用工具列的點擊
+document.addEventListener('touchstart', function(e) {
+  if (e.target.closest('#drawingTools')) {
+    e.stopPropagation();
+  }
+}, { passive: false });
+
+  
 }
 
 
