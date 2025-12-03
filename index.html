@@ -3518,33 +3518,51 @@ function initDrawingTools() {
     updateUI();
   });
 
-  const colorBtn = document.getElementById('colorPreviewBtn');
-  const colorInput = document.getElementById('colorInputHtml');
-  colorBtn.addEventListener('click', () => colorInput.click());
-  colorInput.addEventListener('input', (e) => {
-    currentColor = e.target.value;
-    colorBtn.style.backgroundColor = currentColor;
-    if (!isScrollMode && currentTool === 'pen') updateUI();
-  });
+ const colorBtn = document.getElementById('colorPreviewBtn');
+const colorInput = document.getElementById('colorInputHtml'); // 隱藏的原生顏色選擇器
 
-  const sizeToggleBtn = document.getElementById('sizeToggleBtn');
-  const sliderPopup = document.getElementById('sizeSliderPopup');
-  const slider = document.getElementById('brushSizeSlider');
-  sizeToggleBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
+// 確保顏色按鈕能打開系統顏色選擇器
+colorBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // 阻止事件冒泡到可能的父容器或繪圖Canvas
+    colorInput.click(); // 觸發隱藏的顏色選擇器
+});
+
+// 確保選擇新顏色後能更新當前顏色和UI
+colorInput.addEventListener('input', (e) => {
+    currentColor = e.target.value;
+    colorBtn.style.backgroundColor = currentColor; // 更新按鈕預覽色
+    // 注意：在繪畫過程中動態改顏色，下次開始繪畫時會用新顏色。
+    // 如果需要即時影響當前繪畫，需要在 startDrawing 時重新設置 ctx.strokeStyle
+});
+
+ const sizeToggleBtn = document.getElementById('sizeToggleBtn');
+const sliderPopup = document.getElementById('sizeSliderPopup');
+const slider = document.getElementById('brushSizeSlider'); // 滑桿本身
+
+// 點擊粗細按鈕時切換滑桿彈窗的顯示狀態
+sizeToggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // 非常重要！阻止事件冒泡，防止立即觸發下方的 document 點擊監聽器
     sliderPopup.classList.toggle('hidden');
-  });
-  document.addEventListener('click', (e) => {
+});
+
+// 點擊滑桿彈窗 *外部* 時關閉彈窗
+document.addEventListener('click', (e) => {
+    // 檢查點擊的目標是否 *不在* 按鈕和彈窗內
     if (!sizeToggleBtn.contains(e.target) && !sliderPopup.contains(e.target)) {
         sliderPopup.classList.add('hidden');
     }
-  });
-  slider.addEventListener('input', (e) => {
+});
+
+// 滑桿值改變時更新對應的工具大小
+slider.addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
-    if (currentTool === 'pen') penSize = val;
-    else eraserSize = val;
-    updateUI();
-  });
+    if (currentTool === 'pen') {
+        penSize = val; // 更新畫筆大小
+    } else if (currentTool === 'eraser') {
+        eraserSize = val; // 更新橡皮擦大小
+    }
+    updateUI(); // 更新UI顯示，確保指示器正確
+});
 
   document.getElementById('undoBtn').addEventListener('click', undoDrawing);
   document.getElementById('clearCanvasBtn').addEventListener('click', () => {
