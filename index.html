@@ -3332,6 +3332,7 @@ function downloadMyAnswer() {
 }
 
 // 初始化繪圖工具 (完美黏附內容版)
+// 初始化繪圖工具 (完美黏附內容版)
 function initDrawingTools() {
   const drawingCanvas = document.getElementById('drawingCanvas');
   const feedbackCanvas = document.getElementById('feedbackCanvas');
@@ -3403,7 +3404,6 @@ function initDrawingTools() {
     let clientX, clientY;
     
     if (e.type.includes('touch')) {
-      // 處理觸控事件
       if (e.touches && e.touches.length > 0) {
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
@@ -3414,7 +3414,6 @@ function initDrawingTools() {
         return { x: 0, y: 0 };
       }
     } else {
-      // 處理滑鼠事件
       clientX = e.clientX;
       clientY = e.clientY;
     }
@@ -3486,13 +3485,6 @@ function initDrawingTools() {
     ctx.putImageData(drawingHistory[historyIndex], 0, 0);
   }
 
-  // --- 修正：防止工具按鈕觸發畫布事件 ---
-  function preventCanvasEvents(e) {
-    e.stopPropagation();
-    e.preventDefault();
-    return false;
-  }
-
   // --- 事件監聽 ---
   toggleDrawingToolsBtn.addEventListener('click', () => {
     const isHidden = drawingCanvasContainer.classList.contains('hidden');
@@ -3537,52 +3529,123 @@ function initDrawingTools() {
   const colorBtn = document.getElementById('colorPreviewBtn');
   const colorInput = document.getElementById('colorInputHtml');
   
-  // 修正：顏色按鈕觸控處理
-  colorBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    colorInput.click();
-  });
+  // **修訂1：修復顏色選擇按鈕無法點擊的問題**
+  // 使用 label 包裹按鈕來觸發顏色選擇器
+  const colorLabel = document.createElement('label');
+  colorLabel.style.cssText = 'display: inline-block; cursor: pointer; width: 48px; height: 48px; border-radius: 50%;';
+  colorLabel.setAttribute('for', 'colorInputHtml');
+  colorLabel.title = '選擇顏色';
   
-  // 修正：為觸控設備優化顏色輸入
-  colorInput.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, { passive: false });
+  // 將顏色按鈕移到 label 內部
+  const colorBtnClone = colorBtn.cloneNode(true);
+  colorLabel.appendChild(colorBtnClone);
   
-  colorInput.addEventListener('change', (e) => {
+  // 替換原來的顏色按鈕
+  colorBtn.parentNode.replaceChild(colorLabel, colorBtn);
+  
+  // 更新變數引用
+  const newColorBtn = document.querySelector('label[for="colorInputHtml"]');
+  
+  // 設置初始顏色
+  newColorBtn.style.backgroundColor = currentColor;
+  
+  // 監聽顏色變化
+  colorInput.addEventListener('input', (e) => {
     currentColor = e.target.value;
-    colorBtn.style.backgroundColor = currentColor;
+    newColorBtn.style.backgroundColor = currentColor;
     if (!isScrollMode && currentTool === 'pen') updateUI();
+  });
+
+  // 點擊 label 時直接觸發顏色選擇器
+  newColorBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // 在移動設備上直接點擊顏色輸入框
+    colorInput.click();
   });
 
   const sizeToggleBtn = document.getElementById('sizeToggleBtn');
   const sliderPopup = document.getElementById('sizeSliderPopup');
   const slider = document.getElementById('brushSizeSlider');
   
-  // 修正：粗細調整按鈕觸控處理
+  // **修訂2：修復粗細調整滑桿彈出時工具列位移的問題**
+  // 為滑桿彈出框添加新的 CSS 類來修正定位
+  sliderPopup.classList.add('slider-popup-fixed');
+  
+  // 動態添加 CSS 樣式來修正彈出框
+  const style = document.createElement('style');
+  style.textContent = `
+    .slider-popup-fixed {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      z-index: 9999 !important;
+      background: white !important;
+      padding: 20px !important;
+      border-radius: 12px !important;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+      border: 2px solid var(--clay-brown) !important;
+    }
+    
+    @media (max-width: 768px) {
+      .slider-popup-fixed {
+        width: 280px !important;
+        padding: 25px 20px !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+  
+  // 修正粗細調整按鈕事件
   sizeToggleBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     e.preventDefault();
-    sliderPopup.classList.toggle('hidden');
     
-    // 在iPad上，確保彈出框可見
-    if (!sliderPopup.classList.contains('hidden')) {
-      setTimeout(() => {
-        slider.focus();
-      }, 100);
+    // 切換彈出框顯示
+    const isPopupHidden = sliderPopup.classList.contains('hidden');
+    
+    if (isPopupHidden) {
+      // 顯示彈出框
+      sliderPopup.classList.remove('hidden');
+      
+      // 為整個頁面添加一個遮罩，防止其他點擊
+      const overlay = document.createElement('div');
+      overlay.id = 'sliderOverlay';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.3);
+        z-index: 9998;
+      `;
+      
+      overlay.addEventListener('click', () => {
+        sliderPopup.classList.add('hidden');
+        if (document.getElementById('sliderOverlay')) {
+          document.body.removeChild(document.getElementById('sliderOverlay'));
+        }
+      });
+      
+      document.body.appendChild(overlay);
+      
+      // 點擊彈出框內部不關閉
+      sliderPopup.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    } else {
+      // 隱藏彈出框
+      sliderPopup.classList.add('hidden');
+      const overlay = document.getElementById('sliderOverlay');
+      if (overlay) {
+        document.body.removeChild(overlay);
+      }
     }
   });
-  
-  // 修正：防止滑桿觸控事件冒泡
-  slider.addEventListener('touchstart', (e) => {
-    e.stopPropagation();
-  }, { passive: false });
-  
-  slider.addEventListener('touchmove', (e) => {
-    e.stopPropagation();
-  }, { passive: false });
-  
+
+  // 滑桿值變化
   slider.addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
     if (currentTool === 'pen') penSize = val;
@@ -3590,6 +3653,7 @@ function initDrawingTools() {
     updateUI();
   });
 
+  // 其他按鈕事件
   document.getElementById('undoBtn').addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -3611,7 +3675,7 @@ function initDrawingTools() {
     closeDrawingTools();
   });
 
-  // 修正：防止工具列本身觸發畫布事件
+  // 防止工具列觸發畫布事件
   drawingTools.addEventListener('touchstart', (e) => {
     e.stopPropagation();
   }, { passive: false });
@@ -3620,25 +3684,10 @@ function initDrawingTools() {
     e.stopPropagation();
   });
 
-  // 修正：關閉彈出框當點擊外部
-  document.addEventListener('click', (e) => {
-    if (!sizeToggleBtn.contains(e.target) && !sliderPopup.contains(e.target)) {
-        sliderPopup.classList.add('hidden');
-    }
-  });
-
-  // 修正：為觸控設備添加額外的事件監聽
-  document.addEventListener('touchstart', (e) => {
-    if (!sizeToggleBtn.contains(e.target) && !sliderPopup.contains(e.target)) {
-        sliderPopup.classList.add('hidden');
-    }
-  }, { passive: false });
-
   // --- 繪畫邏輯 ---
   function startDrawing(e) {
     if (isScrollMode) return;
     
-    // 修正：如果是從工具按鈕開始的觸控，不應該開始繪畫
     if (e.type === 'touchstart') {
       const target = e.target;
       if (target.closest('#drawingTools') || 
@@ -3673,7 +3722,6 @@ function initDrawingTools() {
         ctx.fill();
     }
     
-    // 防止觸控設備的默認行為（如滾動）
     if (e.type.includes('touch')) {
       e.preventDefault();
     }
@@ -3682,7 +3730,6 @@ function initDrawingTools() {
   function draw(e) {
     if (!isDrawing || isScrollMode) return;
     
-    // 修正：防止工具按鈕區域的觸控觸發繪畫
     if (e.type.includes('touch')) {
       const target = e.target;
       if (target.closest('#drawingTools') || 
@@ -3733,22 +3780,18 @@ function initDrawingTools() {
     }
   }
 
-  // 修正：為畫布添加正確的觸控事件監聽
+  // 畫布事件監聽
   drawingCanvas.addEventListener('mousedown', startDrawing);
   drawingCanvas.addEventListener('mousemove', draw);
   drawingCanvas.addEventListener('mouseup', stopDrawing);
   drawingCanvas.addEventListener('mouseout', stopDrawing);
   
-  // 修正：觸控事件處理，使用 { passive: false } 以便可以 preventDefault
   drawingCanvas.addEventListener('touchstart', startDrawing, { passive: false });
   drawingCanvas.addEventListener('touchmove', draw, { passive: false });
   drawingCanvas.addEventListener('touchend', stopDrawing);
   drawingCanvas.addEventListener('touchcancel', stopDrawing);
 
   drawingCanvasContainer.classList.add('hidden');
-  
-  // 修正：初始化顏色按鈕的背景色
-  colorBtn.style.backgroundColor = currentColor;
 }
 
 // 監聽視窗大小改變，重新計算 Canvas 大小
