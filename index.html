@@ -1202,8 +1202,6 @@ input[type=range]::-webkit-slider-thumb {
     padding: 8px 12px;
     gap: 10px; /* 稍微縮小間距 */
     border-radius: 30px;
-     z-index: 9999 !important;
-  pointer-events: auto !important;
   }
 
   .tool-btn {
@@ -3343,7 +3341,7 @@ function initDrawingTools() {
   const drawingCanvasContainer = document.getElementById('drawingCanvasContainer');
   const drawingTools = document.getElementById('drawingTools');
   const toggleDrawingToolsBtn = document.getElementById('toggleDrawingTools');
-  const answersList = document.getElementById('fullscreenAnswersList'); // 滾動容器
+  const answersList = document.getElementById('fullscreenAnswersList');
 
   // 狀態變數
   let isDrawing = false;
@@ -3351,9 +3349,9 @@ function initDrawingTools() {
   let lastY = 0;
   let currentTool = 'pen'; 
   let currentColor = 'rgba(255, 0, 0, 0.8)';
-  let penSize = 1; // 預設最細
+  let penSize = 1;
   let eraserSize = 30;
-  let isScrollMode = false; // 預設繪畫模式
+  let isScrollMode = false;
 
   // 歷史記錄
   let drawingHistory = [];
@@ -3364,14 +3362,10 @@ function initDrawingTools() {
   function resizeCanvas() {
     const container = answersList;
     
-    // 1. 獲取內容的「總高度」(包含未捲動到的部分)
-    // 如果內容少於一頁，則至少使用視窗高度
     const width = container.clientWidth;
-    const height = Math.max(container.scrollHeight, container.clientHeight); 
+    const height = Math.max(container.scrollHeight, container.clientHeight);
     const dpr = window.devicePixelRatio || 1;
 
-    // 2. 設定 Canvas 容器的高度等於內容總高度
-    // 這讓 Canvas 像一張長條貼紙貼在整個內容上
     drawingCanvasContainer.style.width = width + 'px';
     drawingCanvasContainer.style.height = height + 'px';
 
@@ -3381,7 +3375,6 @@ function initDrawingTools() {
     feedbackCanvas.style.width = width + 'px';
     feedbackCanvas.style.height = height + 'px';
 
-    // 3. 設定 Canvas 實際像素解析度
     if (drawingCanvas.width !== width * dpr || drawingCanvas.height !== height * dpr) {
         drawingCanvas.width = width * dpr;
         drawingCanvas.height = height * dpr;
@@ -3389,7 +3382,6 @@ function initDrawingTools() {
         feedbackCanvas.width = width * dpr;
         feedbackCanvas.height = height * dpr;
 
-        // 縮放上下文
         ctx.scale(dpr, dpr);
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -3398,7 +3390,6 @@ function initDrawingTools() {
         feedbackCtx.lineCap = 'round';
         feedbackCtx.lineJoin = 'round';
 
-        // 恢復歷史記錄
         if (historyIndex >= 0 && drawingHistory[historyIndex]) {
              ctx.putImageData(drawingHistory[historyIndex], 0, 0);
         }
@@ -3407,17 +3398,27 @@ function initDrawingTools() {
 
   // --- 核心修正：座標計算 ---
   function getCoordinates(e) {
-    // 獲取 Canvas 在當前視窗中的位置
     const rect = drawingCanvas.getBoundingClientRect();
     
-    const clientX = e.clientX || e.touches[0].clientX;
-    const clientY = e.clientY || e.touches[0].clientY;
+    let clientX, clientY;
     
-    // 計算邏輯：
-    // 當向下滾動時，Canvas 的頂部會移出螢幕，rect.top 變成負值 (例如 -500)。
-    // 如果點擊螢幕 Y=100 的位置：
-    // Canvas 內的 Y = 100 - (-500) = 600
-    // 這樣筆劃就會正確地畫在 Canvas 的第 600px 處，而不是第 100px 處。
+    if (e.type.includes('touch')) {
+      // 處理觸控事件
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+      } else {
+        return { x: 0, y: 0 };
+      }
+    } else {
+      // 處理滑鼠事件
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
     return {
         x: clientX - rect.left,
         y: clientY - rect.top 
@@ -3485,6 +3486,13 @@ function initDrawingTools() {
     ctx.putImageData(drawingHistory[historyIndex], 0, 0);
   }
 
+  // --- 修正：防止工具按鈕觸發畫布事件 ---
+  function preventCanvasEvents(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    return false;
+  }
+
   // --- 事件監聽 ---
   toggleDrawingToolsBtn.addEventListener('click', () => {
     const isHidden = drawingCanvasContainer.classList.contains('hidden');
@@ -3492,7 +3500,6 @@ function initDrawingTools() {
         drawingCanvasContainer.classList.remove('hidden');
         drawingTools.classList.remove('hidden');
         
-        // 延遲執行以確保 DOM 渲染完畢，能抓到正確的 scrollHeight
         setTimeout(() => {
             resizeCanvas();
             isScrollMode = false; 
@@ -3503,18 +3510,25 @@ function initDrawingTools() {
     }
   });
 
-  document.getElementById('scrollModeBtn').addEventListener('click', () => {
+  // 修正：確保按鈕可以正確響應觸控
+  document.getElementById('scrollModeBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     isScrollMode = !isScrollMode;
     updateUI();
   });
 
-  document.getElementById('redPenBtn').addEventListener('click', () => {
+  document.getElementById('redPenBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     isScrollMode = false;
     currentTool = 'pen';
     updateUI();
   });
 
-  document.getElementById('eraserBtn').addEventListener('click', () => {
+  document.getElementById('eraserBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     isScrollMode = false;
     currentTool = 'eraser';
     updateUI();
@@ -3522,8 +3536,21 @@ function initDrawingTools() {
 
   const colorBtn = document.getElementById('colorPreviewBtn');
   const colorInput = document.getElementById('colorInputHtml');
-  colorBtn.addEventListener('click', () => colorInput.click());
-  colorInput.addEventListener('input', (e) => {
+  
+  // 修正：顏色按鈕觸控處理
+  colorBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    colorInput.click();
+  });
+  
+  // 修正：為觸控設備優化顏色輸入
+  colorInput.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, { passive: false });
+  
+  colorInput.addEventListener('change', (e) => {
     currentColor = e.target.value;
     colorBtn.style.backgroundColor = currentColor;
     if (!isScrollMode && currentTool === 'pen') updateUI();
@@ -3532,15 +3559,30 @@ function initDrawingTools() {
   const sizeToggleBtn = document.getElementById('sizeToggleBtn');
   const sliderPopup = document.getElementById('sizeSliderPopup');
   const slider = document.getElementById('brushSizeSlider');
+  
+  // 修正：粗細調整按鈕觸控處理
   sizeToggleBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    e.preventDefault();
     sliderPopup.classList.toggle('hidden');
-  });
-  document.addEventListener('click', (e) => {
-    if (!sizeToggleBtn.contains(e.target) && !sliderPopup.contains(e.target)) {
-        sliderPopup.classList.add('hidden');
+    
+    // 在iPad上，確保彈出框可見
+    if (!sliderPopup.classList.contains('hidden')) {
+      setTimeout(() => {
+        slider.focus();
+      }, 100);
     }
   });
+  
+  // 修正：防止滑桿觸控事件冒泡
+  slider.addEventListener('touchstart', (e) => {
+    e.stopPropagation();
+  }, { passive: false });
+  
+  slider.addEventListener('touchmove', (e) => {
+    e.stopPropagation();
+  }, { passive: false });
+  
   slider.addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
     if (currentTool === 'pen') penSize = val;
@@ -3548,18 +3590,65 @@ function initDrawingTools() {
     updateUI();
   });
 
-  document.getElementById('undoBtn').addEventListener('click', undoDrawing);
-  document.getElementById('clearCanvasBtn').addEventListener('click', () => {
+  document.getElementById('undoBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    undoDrawing();
+  });
+  
+  document.getElementById('clearCanvasBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (confirm('確定要清空所有批註嗎？')) {
         ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
         saveDrawingState();
     }
   });
-  document.getElementById('exitDrawingBtn').addEventListener('click', closeDrawingTools);
+  
+  document.getElementById('exitDrawingBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeDrawingTools();
+  });
+
+  // 修正：防止工具列本身觸發畫布事件
+  drawingTools.addEventListener('touchstart', (e) => {
+    e.stopPropagation();
+  }, { passive: false });
+  
+  drawingTools.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+
+  // 修正：關閉彈出框當點擊外部
+  document.addEventListener('click', (e) => {
+    if (!sizeToggleBtn.contains(e.target) && !sliderPopup.contains(e.target)) {
+        sliderPopup.classList.add('hidden');
+    }
+  });
+
+  // 修正：為觸控設備添加額外的事件監聽
+  document.addEventListener('touchstart', (e) => {
+    if (!sizeToggleBtn.contains(e.target) && !sliderPopup.contains(e.target)) {
+        sliderPopup.classList.add('hidden');
+    }
+  }, { passive: false });
 
   // --- 繪畫邏輯 ---
   function startDrawing(e) {
     if (isScrollMode) return;
+    
+    // 修正：如果是從工具按鈕開始的觸控，不應該開始繪畫
+    if (e.type === 'touchstart') {
+      const target = e.target;
+      if (target.closest('#drawingTools') || 
+          target.closest('.tool-btn') || 
+          target.closest('#sizeSliderPopup') ||
+          target === slider) {
+        return;
+      }
+    }
+    
     isDrawing = true;
     
     const coords = getCoordinates(e);
@@ -3583,11 +3672,25 @@ function initDrawingTools() {
         ctx.fillStyle = currentColor;
         ctx.fill();
     }
+    
+    // 防止觸控設備的默認行為（如滾動）
+    if (e.type.includes('touch')) {
+      e.preventDefault();
+    }
   }
 
   function draw(e) {
     if (!isDrawing || isScrollMode) return;
-    if (e.type !== 'mousemove') e.preventDefault(); 
+    
+    // 修正：防止工具按鈕區域的觸控觸發繪畫
+    if (e.type.includes('touch')) {
+      const target = e.target;
+      if (target.closest('#drawingTools') || 
+          target.closest('#sizeSliderPopup')) {
+        return;
+      }
+      e.preventDefault();
+    }
 
     const coords = getCoordinates(e);
     const currentX = coords.x;
@@ -3630,26 +3733,23 @@ function initDrawingTools() {
     }
   }
 
+  // 修正：為畫布添加正確的觸控事件監聽
   drawingCanvas.addEventListener('mousedown', startDrawing);
   drawingCanvas.addEventListener('mousemove', draw);
   drawingCanvas.addEventListener('mouseup', stopDrawing);
   drawingCanvas.addEventListener('mouseout', stopDrawing);
+  
+  // 修正：觸控事件處理，使用 { passive: false } 以便可以 preventDefault
   drawingCanvas.addEventListener('touchstart', startDrawing, { passive: false });
   drawingCanvas.addEventListener('touchmove', draw, { passive: false });
   drawingCanvas.addEventListener('touchend', stopDrawing);
+  drawingCanvas.addEventListener('touchcancel', stopDrawing);
 
   drawingCanvasContainer.classList.add('hidden');
-
-// 強制在 iOS 上啟用工具列的點擊
-document.addEventListener('touchstart', function(e) {
-  if (e.target.closest('#drawingTools')) {
-    e.stopPropagation();
-  }
-}, { passive: false });
-
   
+  // 修正：初始化顏色按鈕的背景色
+  colorBtn.style.backgroundColor = currentColor;
 }
-
 
 // 監聽視窗大小改變，重新計算 Canvas 大小
 window.addEventListener('resize', () => {
