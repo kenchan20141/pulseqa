@@ -1073,6 +1073,7 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
 /* --- 繪畫模式工具列響應式設計 --- */
 
 /* 1. 工具列容器基礎設定 */
+/* 1. 修改工具列容器，防止被子元素撐開 */
 #drawingTools {
   position: fixed;
   top: 85px; 
@@ -1088,31 +1089,22 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   display: flex !important;
   flex-direction: row;
   align-items: center;
-  justify-content: flex-start; /* 確保內容從左開始排列 */
+  justify-content: flex-start;
   gap: 12px; 
   
-  /* 響應式關鍵設定 */
-  max-width: 92vw; /* 留一點邊距，不貼死螢幕邊緣 */
-  width: max-content; /* 寬度隨內容自動調整 */
+  max-width: 92vw;
+  width: max-content;
   
-  /* 允許橫向滾動，防止內容被切掉 */
   overflow-x: auto; 
-  -webkit-overflow-scrolling: touch; /* iOS 滑動優化 */
+  -webkit-overflow-scrolling: touch;
   
-  /* 隱藏滾動條但保留功能 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   
   transition: top 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-#drawingTools.hidden {
-  display: none !important;
-}
-
-/* 隱藏 Chrome/Safari/Webkit 的滾動條 */
-#drawingTools::-webkit-scrollbar {
-  display: none;
+  
+  /* 關鍵：防止內部絕對定位元素影響高度 */
+  overflow-y: visible;
 }
 
 /* 2. 按鈕基礎設定 */
@@ -1152,26 +1144,58 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   transform: scale(1.1);
 }
 
-/* 3. 滑桿容器：預設樣式 (電腦版) */
+/* 2. 修改滑桿彈出框為固定定位（iPad優化版）*/
 .slider-popup {
-  position: absolute;
-  top: 130%; /* 按鈕下方 */
+  position: fixed; /* 從 absolute 改為 fixed */
+  top: 50%; /* 置中顯示 */
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   background: var(--paper);
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-  border: 1px solid rgba(138, 118, 99, 0.2);
-  width: 200px;
+  padding: 20px 25px;
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+  border: 2px solid var(--clay-brown);
+  width: 280px;
+  max-width: 90vw;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 70;
+  z-index: 100; /* 提高層級，確保在工具列之上 */
+  
+  /* 添加背景遮罩效果 */
+  backdrop-filter: blur(3px);
 }
 
-.slider-popup.hidden {
-  display: none;
+/* 添加半透明遮罩背景 */
+.slider-popup::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: -1;
+}
+
+/* 滑桿樣式優化 */
+.slider-popup input[type=range] {
+  width: 100%;
+  margin: 10px 0;
+}
+
+/* 手機版響應式調整 */
+@media (max-width: 768px) {
+  .slider-popup {
+    width: 85vw;
+    padding: 25px 20px;
+  }
+  
+  input[type=range]::-webkit-slider-thumb {
+    width: 28px; 
+    height: 28px;
+  }
 }
 
 /* 4. 滑桿本體樣式 */
@@ -1243,13 +1267,13 @@ input[type=range]::-webkit-slider-thumb {
   transition: opacity 0.3s;
 }
 
-/* 隱藏原生顏色輸入框 */
+/* 修改後 */
 #colorInputHtml {
   position: absolute;
   opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
+  width: 1px;
+  height: 1px;
+  z-index: -1;
 }
 
   /* --- 滾動模式與 Canvas 定位修訂 --- */
@@ -3332,7 +3356,6 @@ function downloadMyAnswer() {
 }
 
 // 初始化繪圖工具 (完美黏附內容版)
-// 初始化繪圖工具 (完美黏附內容版)
 function initDrawingTools() {
   const drawingCanvas = document.getElementById('drawingCanvas');
   const feedbackCanvas = document.getElementById('feedbackCanvas');
@@ -3404,6 +3427,7 @@ function initDrawingTools() {
     let clientX, clientY;
     
     if (e.type.includes('touch')) {
+      // 處理觸控事件
       if (e.touches && e.touches.length > 0) {
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
@@ -3414,6 +3438,7 @@ function initDrawingTools() {
         return { x: 0, y: 0 };
       }
     } else {
+      // 處理滑鼠事件
       clientX = e.clientX;
       clientY = e.clientY;
     }
@@ -3485,6 +3510,13 @@ function initDrawingTools() {
     ctx.putImageData(drawingHistory[historyIndex], 0, 0);
   }
 
+  // --- 修正：防止工具按鈕觸發畫布事件 ---
+  function preventCanvasEvents(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    return false;
+  }
+
   // --- 事件監聽 ---
   toggleDrawingToolsBtn.addEventListener('click', () => {
     const isHidden = drawingCanvasContainer.classList.contains('hidden');
@@ -3526,126 +3558,93 @@ function initDrawingTools() {
     updateUI();
   });
 
-  const colorBtn = document.getElementById('colorPreviewBtn');
-  const colorInput = document.getElementById('colorInputHtml');
+ // 修改後的處理方式
+colorBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  colorInput.click();
+});
+
+colorBtn.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  colorInput.click();
+});
+
+// 確保顏色輸入可以響應
+colorInput.addEventListener('click', (e) => {
+  e.stopPropagation();
+});
+
+colorInput.addEventListener('change', (e) => {
+  currentColor = e.target.value;
+  colorBtn.style.backgroundColor = currentColor;
+  if (!isScrollMode && currentTool === 'pen') updateUI();
+});
   
-  // **修訂1：修復顏色選擇按鈕無法點擊的問題**
-  // 使用 label 包裹按鈕來觸發顏色選擇器
-  const colorLabel = document.createElement('label');
-  colorLabel.style.cssText = 'display: inline-block; cursor: pointer; width: 48px; height: 48px; border-radius: 50%;';
-  colorLabel.setAttribute('for', 'colorInputHtml');
-  colorLabel.title = '選擇顏色';
+  // 修正：顏色按鈕觸控處理
+  colorBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    colorInput.click();
+  });
   
-  // 將顏色按鈕移到 label 內部
-  const colorBtnClone = colorBtn.cloneNode(true);
-  colorLabel.appendChild(colorBtnClone);
+  // 修正：為觸控設備優化顏色輸入
+  colorInput.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, { passive: false });
   
-  // 替換原來的顏色按鈕
-  colorBtn.parentNode.replaceChild(colorLabel, colorBtn);
-  
-  // 更新變數引用
-  const newColorBtn = document.querySelector('label[for="colorInputHtml"]');
-  
-  // 設置初始顏色
-  newColorBtn.style.backgroundColor = currentColor;
-  
-  // 監聽顏色變化
-  colorInput.addEventListener('input', (e) => {
+  colorInput.addEventListener('change', (e) => {
     currentColor = e.target.value;
-    newColorBtn.style.backgroundColor = currentColor;
+    colorBtn.style.backgroundColor = currentColor;
     if (!isScrollMode && currentTool === 'pen') updateUI();
   });
 
-  // 點擊 label 時直接觸發顏色選擇器
-  newColorBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // 在移動設備上直接點擊顏色輸入框
-    colorInput.click();
-  });
-
+   // === 粗細調整按鈕處理（完整替換） ===
   const sizeToggleBtn = document.getElementById('sizeToggleBtn');
   const sliderPopup = document.getElementById('sizeSliderPopup');
   const slider = document.getElementById('brushSizeSlider');
   
-  // **修訂2：修復粗細調整滑桿彈出時工具列位移的問題**
-  // 為滑桿彈出框添加新的 CSS 類來修正定位
-  sliderPopup.classList.add('slider-popup-fixed');
-  
-  // 動態添加 CSS 樣式來修正彈出框
-  const style = document.createElement('style');
-  style.textContent = `
-    .slider-popup-fixed {
-      position: fixed !important;
-      top: 50% !important;
-      left: 50% !important;
-      transform: translate(-50%, -50%) !important;
-      z-index: 9999 !important;
-      background: white !important;
-      padding: 20px !important;
-      border-radius: 12px !important;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
-      border: 2px solid var(--clay-brown) !important;
-    }
-    
-    @media (max-width: 768px) {
-      .slider-popup-fixed {
-        width: 280px !important;
-        padding: 25px 20px !important;
-      }
-    }
-  `;
-  document.head.appendChild(style);
-  
-  // 修正粗細調整按鈕事件
+  // 點擊切換滑桿顯示/隱藏
   sizeToggleBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     e.preventDefault();
+    sliderPopup.classList.toggle('hidden');
     
-    // 切換彈出框顯示
-    const isPopupHidden = sliderPopup.classList.contains('hidden');
-    
-    if (isPopupHidden) {
-      // 顯示彈出框
-      sliderPopup.classList.remove('hidden');
-      
-      // 為整個頁面添加一個遮罩，防止其他點擊
-      const overlay = document.createElement('div');
-      overlay.id = 'sliderOverlay';
-      overlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.3);
-        z-index: 9998;
-      `;
-      
-      overlay.addEventListener('click', () => {
-        sliderPopup.classList.add('hidden');
-        if (document.getElementById('sliderOverlay')) {
-          document.body.removeChild(document.getElementById('sliderOverlay'));
-        }
-      });
-      
-      document.body.appendChild(overlay);
-      
-      // 點擊彈出框內部不關閉
-      sliderPopup.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
-    } else {
-      // 隱藏彈出框
-      sliderPopup.classList.add('hidden');
-      const overlay = document.getElementById('sliderOverlay');
-      if (overlay) {
-        document.body.removeChild(overlay);
-      }
+    if (!sliderPopup.classList.contains('hidden')) {
+      setTimeout(() => slider.focus(), 100);
     }
   });
-
-  // 滑桿值變化
+  
+  // 觸控版本的切換
+  sizeToggleBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sliderPopup.classList.toggle('hidden');
+    
+    if (!sliderPopup.classList.contains('hidden')) {
+      setTimeout(() => slider.focus(), 100);
+    }
+  });
+  
+  // 防止滑桿事件冒泡
+  sliderPopup.addEventListener('touchstart', (e) => {
+    e.stopPropagation();
+  }, { passive: false });
+  
+  sliderPopup.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+  
+  slider.addEventListener('touchstart', (e) => {
+    e.stopPropagation();
+  }, { passive: true });
+  
+  slider.addEventListener('touchmove', (e) => {
+    e.stopPropagation();
+  }, { passive: true });
+  
   slider.addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
     if (currentTool === 'pen') penSize = val;
@@ -3653,7 +3652,16 @@ function initDrawingTools() {
     updateUI();
   });
 
-  // 其他按鈕事件
+  // 點擊彈窗外部關閉（優化版）
+  const closeSliderPopup = (e) => {
+    if (!sizeToggleBtn.contains(e.target) && !sliderPopup.contains(e.target)) {
+      sliderPopup.classList.add('hidden');
+    }
+  };
+  
+  document.addEventListener('click', closeSliderPopup);
+  document.addEventListener('touchend', closeSliderPopup, { passive: true });
+
   document.getElementById('undoBtn').addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -3675,7 +3683,7 @@ function initDrawingTools() {
     closeDrawingTools();
   });
 
-  // 防止工具列觸發畫布事件
+  // 修正：防止工具列本身觸發畫布事件
   drawingTools.addEventListener('touchstart', (e) => {
     e.stopPropagation();
   }, { passive: false });
@@ -3684,10 +3692,25 @@ function initDrawingTools() {
     e.stopPropagation();
   });
 
+  // 修正：關閉彈出框當點擊外部
+  document.addEventListener('click', (e) => {
+    if (!sizeToggleBtn.contains(e.target) && !sliderPopup.contains(e.target)) {
+        sliderPopup.classList.add('hidden');
+    }
+  });
+
+  // 修正：為觸控設備添加額外的事件監聽
+  document.addEventListener('touchstart', (e) => {
+    if (!sizeToggleBtn.contains(e.target) && !sliderPopup.contains(e.target)) {
+        sliderPopup.classList.add('hidden');
+    }
+  }, { passive: false });
+
   // --- 繪畫邏輯 ---
   function startDrawing(e) {
     if (isScrollMode) return;
     
+    // 修正：如果是從工具按鈕開始的觸控，不應該開始繪畫
     if (e.type === 'touchstart') {
       const target = e.target;
       if (target.closest('#drawingTools') || 
@@ -3722,6 +3745,7 @@ function initDrawingTools() {
         ctx.fill();
     }
     
+    // 防止觸控設備的默認行為（如滾動）
     if (e.type.includes('touch')) {
       e.preventDefault();
     }
@@ -3730,6 +3754,7 @@ function initDrawingTools() {
   function draw(e) {
     if (!isDrawing || isScrollMode) return;
     
+    // 修正：防止工具按鈕區域的觸控觸發繪畫
     if (e.type.includes('touch')) {
       const target = e.target;
       if (target.closest('#drawingTools') || 
@@ -3780,18 +3805,22 @@ function initDrawingTools() {
     }
   }
 
-  // 畫布事件監聽
+  // 修正：為畫布添加正確的觸控事件監聽
   drawingCanvas.addEventListener('mousedown', startDrawing);
   drawingCanvas.addEventListener('mousemove', draw);
   drawingCanvas.addEventListener('mouseup', stopDrawing);
   drawingCanvas.addEventListener('mouseout', stopDrawing);
   
+  // 修正：觸控事件處理，使用 { passive: false } 以便可以 preventDefault
   drawingCanvas.addEventListener('touchstart', startDrawing, { passive: false });
   drawingCanvas.addEventListener('touchmove', draw, { passive: false });
   drawingCanvas.addEventListener('touchend', stopDrawing);
   drawingCanvas.addEventListener('touchcancel', stopDrawing);
 
   drawingCanvasContainer.classList.add('hidden');
+  
+  // 修正：初始化顏色按鈕的背景色
+  colorBtn.style.backgroundColor = currentColor;
 }
 
 // 監聽視窗大小改變，重新計算 Canvas 大小
