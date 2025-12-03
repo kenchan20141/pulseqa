@@ -1154,45 +1154,70 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
 
 /* 3. 滑桿容器：預設樣式 (電腦版) */
 .slider-popup {
-  position: absolute;
-  top: 130%; /* 按鈕下方 */
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--paper);
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-  border: 1px solid rgba(138, 118, 99, 0.2);
-  width: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 70;
+    position: absolute; /* 電腦版保持絕對定位 */
+    top: 130%; /* 按鈕下方 */
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--paper);
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    border: 1px solid rgba(138, 118, 99, 0.2);
+    width: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 70; /* 確保在工具列之上 */
 }
 
 .slider-popup.hidden {
-  display: none;
+    display: none;
 }
 
 /* 4. 滑桿本體樣式 */
 input[type=range] {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 6px;
-  background: #e5e5e5;
-  border-radius: 3px;
-  outline: none;
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    background: #e5e5e5;
+    border-radius: 3px;
+    outline: none;
 }
 
 input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--clay-brown);
-  cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--clay-brown);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* 5. 手機版響應式調整 (螢幕寬度小於 768px 時觸發) */
+@media (max-width: 768px) {
+    /* 手機版滑桿優化：改為固定在螢幕中央彈出 (Modal模式) */
+    /* 這樣即使工具列在滑動，滑桿也能穩定的顯示在畫面中間 */
+    .slider-popup {
+        position: fixed; /* 改為固定定位，不影響原有佈局 */
+        top: 50%;        /* 垂直居中 */
+        left: 50%;       /* 水平居中 */
+        transform: translate(-50%, -50%); /* 精確居中 */
+        width: 260px;    /* 調整寬度 */
+        padding: 30px 20px; /* 調整內邊距 */
+        background: #fff; /* 使用白色背景 */
+        /* 增加深色背景遮罩效果，讓用戶專注調整 */
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2), 0 0 0 100vmax rgba(0,0,0,0.3); /* 添加遮罩 */
+        border: 1px solid var(--clay-brown);
+        z-index: 70; /* 確保在工具列和其他元素之上 */
+    }
+
+    /* 增大滑桿觸控點，方便手指拖動 */
+    input[type=range]::-webkit-slider-thumb {
+        width: 28px;
+        height: 28px;
+    }
 }
 
 /* 5. 手機版響應式調整 (螢幕寬度小於 768px 時觸發) */
@@ -3537,24 +3562,32 @@ function initDrawingTools() {
   const colorBtn = document.getElementById('colorPreviewBtn');
   const colorInput = document.getElementById('colorInputHtml');
   
-  // 修正：顏色按鈕觸控處理
-  colorBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    colorInput.click();
-  });
-  
-  // 修正：為觸控設備優化顏色輸入
-  colorInput.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, { passive: false });
-  
-  colorInput.addEventListener('change', (e) => {
+ // 修正：顏色按鈕觸控處理
+colorBtn.addEventListener('click', (e) => {
+    e.preventDefault(); // 阻止默認行為
+    e.stopPropagation(); // 阻止事件冒泡到畫布或其他區域
+    colorInput.click(); // 觸發隱藏的顏色選擇器
+});
+
+// 修正：為觸控設備優化顏色輸入
+// 添加 touchstart 事件，並設置 { passive: false }
+colorInput.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // 防止觸控時可能的滾動或其他默認行為
+    e.stopPropagation(); // 防止事件冒泡
+}, { passive: false }); // passive: false 確保 preventDefault 可以生效
+
+// 添加 touchend 事件，確保在觸控結束後也能觸發 change 事件
+colorInput.addEventListener('touchend', (e) => {
+    e.stopPropagation(); // 防止事件冒泡
+});
+
+// 保持原有的 change 事件處理，當顏色改變時更新按鈕背景
+colorInput.addEventListener('change', (e) => {
     currentColor = e.target.value;
     colorBtn.style.backgroundColor = currentColor;
-    if (!isScrollMode && currentTool === 'pen') updateUI();
-  });
+    // 如果需要在繪圖時立即生效，可能也需要更新 ctx.fillStyle
+    // ctx.fillStyle = currentColor; // 如果在繪圖過程中需要，取消註釋
+});
 
   const sizeToggleBtn = document.getElementById('sizeToggleBtn');
   const sliderPopup = document.getElementById('sizeSliderPopup');
@@ -3620,12 +3653,13 @@ function initDrawingTools() {
     e.stopPropagation();
   });
 
-  // 修正：關閉彈出框當點擊外部
-  document.addEventListener('click', (e) => {
+ // 修正：關閉彈出框當點擊外部 (確保在 DOM 加載後執行)
+document.addEventListener('click', (e) => {
+    // 檢查點擊的目標是否不在按鈕和彈窗內部
     if (!sizeToggleBtn.contains(e.target) && !sliderPopup.contains(e.target)) {
         sliderPopup.classList.add('hidden');
     }
-  });
+});
 
   // 修正：為觸控設備添加額外的事件監聽
   document.addEventListener('touchstart', (e) => {
