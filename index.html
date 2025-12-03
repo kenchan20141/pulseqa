@@ -3418,6 +3418,73 @@ function initDrawingTools() {
   let historyIndex = -1;
   const maxHistorySteps = 50;
 
+  // --- 新增：從 localStorage 載入設定 ---
+  function loadDrawingSettings() {
+    try {
+      const savedSettings = localStorage.getItem('drawingSettings');
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        
+        // 載入工具設定
+        if (settings.currentTool) {
+          currentTool = settings.currentTool;
+        }
+        
+        // 載入顏色索引
+        if (typeof settings.currentColorIndex === 'number') {
+          currentColorIndex = settings.currentColorIndex;
+          currentColor = fixedColors[currentColorIndex];
+        }
+        
+        // 載入筆刷大小
+        if (typeof settings.penSize === 'number') {
+          penSize = settings.penSize;
+        }
+        
+        // 載入橡皮擦大小
+        if (typeof settings.eraserSize === 'number') {
+          eraserSize = settings.eraserSize;
+        }
+        
+        // 載入熒光筆透明度
+        if (typeof settings.highlighterAlpha === 'number') {
+          highlighterAlpha = settings.highlighterAlpha;
+          updateHighlighterColors(highlighterAlpha);
+        }
+        
+        // 載入滾動模式狀態
+        if (typeof settings.isScrollMode === 'boolean') {
+          isScrollMode = settings.isScrollMode;
+        }
+        
+        console.log('繪畫設定已從 localStorage 載入:', settings);
+      }
+    } catch (error) {
+      console.error('載入繪畫設定失敗:', error);
+    }
+  }
+
+  // --- 新增：儲存設定到 localStorage ---
+  function saveDrawingSettings() {
+    try {
+      const settings = {
+        currentTool: currentTool,
+        currentColorIndex: currentColorIndex,
+        penSize: penSize,
+        eraserSize: eraserSize,
+        highlighterAlpha: highlighterAlpha,
+        isScrollMode: isScrollMode,
+        // 儲存時間戳記，方便追蹤
+        lastSaved: new Date().toISOString()
+      };
+      
+      localStorage.setItem('drawingSettings', JSON.stringify(settings));
+      console.log('繪畫設定已儲存到 localStorage:', settings);
+    } catch (error) {
+      console.error('儲存繪畫設定失敗:', error);
+    }
+  }
+
   // 輔助函數：將十六進制顏色轉換為 rgba
   function hexToRgba(hex, alpha) {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -3557,6 +3624,9 @@ function initDrawingTools() {
             indicator.style.backgroundColor = '#888';
         }
     }
+    
+    // 儲存設定
+    saveDrawingSettings();
   }
 
   // --- 設置繪圖上下文 ---
@@ -3639,6 +3709,10 @@ function initDrawingTools() {
       closeSliderPopup();
     }
   }
+
+  // --- 初始化設定 ---
+  // 載入之前儲存的設定
+  loadDrawingSettings();
 
   // --- 事件監聽 ---
   toggleDrawingToolsBtn.addEventListener('click', () => {
@@ -4018,6 +4092,9 @@ function initDrawingTools() {
   
   // 初始化繪圖上下文
   setDrawingContext();
+  
+  // 初始更新UI
+  updateUI();
 }
 
 // 監聽視窗大小改變，重新計算 Canvas 大小
