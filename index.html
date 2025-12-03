@@ -1135,6 +1135,10 @@ textarea:not(.no-modal-editor):hover, input[type="text"]:not(.no-modal-editor):h
   /* 關鍵：防止按鈕在空間不足時被壓縮變形 */
   flex-shrink: 0; 
   -webkit-tap-highlight-color: transparent;
+  /* 添加以下三行 */
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .tool-btn:hover {
@@ -3506,11 +3510,29 @@ function initDrawingTools() {
     updateUI();
   });
 
+  // 添加:
+document.getElementById('scrollModeBtn').addEventListener('touchend', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  isScrollMode = !isScrollMode;
+  updateUI();
+});
+
   document.getElementById('redPenBtn').addEventListener('click', () => {
     isScrollMode = false;
     currentTool = 'pen';
     updateUI();
   });
+
+  // 添加:
+document.getElementById('redPenBtn').addEventListener('touchend', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  isScrollMode = false;
+  currentTool = 'pen';
+  updateUI();
+});
+
 
   document.getElementById('eraserBtn').addEventListener('click', () => {
     isScrollMode = false;
@@ -3518,52 +3540,74 @@ function initDrawingTools() {
     updateUI();
   });
 
+  // 添加:
+document.getElementById('eraserBtn').addEventListener('touchend', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  isScrollMode = false;
+  currentTool = 'eraser';
+  updateUI();
+});
+
  const colorBtn = document.getElementById('colorPreviewBtn');
-const colorInput = document.getElementById('colorInputHtml'); // 隱藏的原生顏色選擇器
+const colorInput = document.getElementById('colorInputHtml');
 
-// 確保顏色按鈕能打開系統顏色選擇器
 colorBtn.addEventListener('click', (e) => {
-    e.stopPropagation(); // 阻止事件冒泡到可能的父容器或繪圖Canvas
-    colorInput.click(); // 觸發隱藏的顏色選擇器
+  e.stopPropagation();
+  colorInput.click();
 });
 
-// 確保選擇新顏色後能更新當前顏色和UI
-colorInput.addEventListener('input', (e) => {
+// 添加觸控事件支援
+colorBtn.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  colorInput.click();
+});
+  colorInput.addEventListener('input', (e) => {
     currentColor = e.target.value;
-    colorBtn.style.backgroundColor = currentColor; // 更新按鈕預覽色
-    // 注意：在繪畫過程中動態改顏色，下次開始繪畫時會用新顏色。
-    // 如果需要即時影響當前繪畫，需要在 startDrawing 時重新設置 ctx.strokeStyle
+    colorBtn.style.backgroundColor = currentColor;
+    if (!isScrollMode && currentTool === 'pen') updateUI();
+  });
+
+  const sizeToggleBtn = document.getElementById('sizeToggleBtn');
+  const sliderPopup = document.getElementById('sizeSliderPopup');
+  const slider = document.getElementById('brushSizeSlider');
+ sizeToggleBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  e.preventDefault();
+  sliderPopup.classList.toggle('hidden');
 });
 
- const sizeToggleBtn = document.getElementById('sizeToggleBtn');
-const sliderPopup = document.getElementById('sizeSliderPopup');
-const slider = document.getElementById('brushSizeSlider'); // 滑桿本身
+// 添加觸控事件支援
+sizeToggleBtn.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  sliderPopup.classList.toggle('hidden');
+});
+function closeSliderPopup(e) {
+  if (!sizeToggleBtn.contains(e.target) && !sliderPopup.contains(e.target)) {
+    sliderPopup.classList.add('hidden');
+  }
+}
 
-// 點擊粗細按鈕時切換滑桿彈窗的顯示狀態
-sizeToggleBtn.addEventListener('click', (e) => {
-    e.stopPropagation(); // 非常重要！阻止事件冒泡，防止立即觸發下方的 document 點擊監聽器
-    sliderPopup.classList.toggle('hidden');
+document.addEventListener('click', closeSliderPopup);
+document.addEventListener('touchend', closeSliderPopup);
+ slider.addEventListener('input', (e) => {
+  e.stopPropagation();
+  const val = parseInt(e.target.value);
+  if (currentTool === 'pen') penSize = val;
+  else eraserSize = val;
+  updateUI();
 });
 
-// 點擊滑桿彈窗 *外部* 時關閉彈窗
-document.addEventListener('click', (e) => {
-    // 檢查點擊的目標是否 *不在* 按鈕和彈窗內
-    if (!sizeToggleBtn.contains(e.target) && !sliderPopup.contains(e.target)) {
-        sliderPopup.classList.add('hidden');
-    }
+// 添加觸控優化
+slider.addEventListener('touchstart', (e) => {
+  e.stopPropagation();
 });
 
-// 滑桿值改變時更新對應的工具大小
-slider.addEventListener('input', (e) => {
-    const val = parseInt(e.target.value);
-    if (currentTool === 'pen') {
-        penSize = val; // 更新畫筆大小
-    } else if (currentTool === 'eraser') {
-        eraserSize = val; // 更新橡皮擦大小
-    }
-    updateUI(); // 更新UI顯示，確保指示器正確
+slider.addEventListener('touchmove', (e) => {
+  e.stopPropagation();
 });
-
   document.getElementById('undoBtn').addEventListener('click', undoDrawing);
   document.getElementById('clearCanvasBtn').addEventListener('click', () => {
     if (confirm('確定要清空所有批註嗎？')) {
