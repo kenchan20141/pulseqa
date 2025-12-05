@@ -1619,6 +1619,7 @@ let hostTimer = null; // 【新增】這是專門給主持人端使用的獨立�
 let timeLimit = 600;
 let remainingTime = 0;
 let roomRef = null;
+  let lastCalibrationWarning = 0; // 用於追蹤上次顯示警告的時間
 let sessionActive = false;
 let lastQuestionStartTime = null;
 let hasSubmitted = false;
@@ -1777,20 +1778,36 @@ function hideSharedScreen() {
 function calibrateTime(serverTimestamp) {
   const localTimestamp = Date.now();
   const timeDiff = serverTimestamp - localTimestamp;
- 
-  // 如果時間差異超過30秒，記錄警告
-  if (Math.abs(timeDiff) > 30000) {
-    console.warn(`客戶端與伺服器時間差異過大: ${timeDiff}ms`);
-    // 在UI上顯示警告
-    showTimeSyncWarning(timeDiff);
+  
+  // 提高閾值到5分鐘 (300000毫秒)，避免過於敏感
+  const calibrationThreshold = 300000; // 5分鐘
+  
+  // 檢查時間差是否超過閾值
+  if (Math.abs(timeDiff) > calibrationThreshold) {
+    const now = Date.now();
+    // 防抖機制：至少間隔1分鐘 (60000毫秒) 才顯示一次警告
+    if (now - lastCalibrationWarning > 60000) {
+      console.warn(`客戶端與伺服器時間差異過大: ${timeDiff}ms`);
+      // 顯示警告
+      showTimeSyncWarning(timeDiff);
+      // 更新上次警告時間
+      lastCalibrationWarning = now;
+    }
   }
- 
   return timeDiff;
 }
 function showTimeSyncWarning(timeDiff) {
-  // 簡單的警告提示
+  // 移除已存在的警告
+  const existingWarning = document.querySelector('.time-sync-warning');
+  if (existingWarning) {
+    existingWarning.remove();
+  }
+  
+  // 只有在差異超過10秒時才顯示警告
+  if (Math.abs(timeDiff) < 10000) return;
+  
   const warningDiv = document.createElement('div');
-  warningDiv.className = 'fixed top-4 right-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded shadow-lg z-50';
+  warningDiv.className = 'fixed top-4 right-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded shadow-lg z-50 time-sync-warning';
   warningDiv.innerHTML = `
     <div class="flex items-center">
       <i class="fas fa-exclamation-triangle mr-2"></i>
@@ -1801,13 +1818,19 @@ function showTimeSyncWarning(timeDiff) {
     </div>
   `;
   document.body.appendChild(warningDiv);
- 
-  // 5秒後自動移除
+  
+  // 10秒後自動移除
   setTimeout(() => {
-    warningDiv.style.transition = 'opacity 0.5s';
-    warningDiv.style.opacity = '0';
-    setTimeout(() => document.body.removeChild(warningDiv), 500);
-  }, 5000);
+    if (warningDiv.parentNode) {
+      warningDiv.style.transition = 'opacity 0.5s';
+      warningDiv.style.opacity = '0';
+      setTimeout(() => {
+        if (warningDiv.parentNode) {
+          warningDiv.remove();
+        }
+      }, 500);
+    }
+  }, 10000);
 }
  
 // Student local state for outline configuration
@@ -2493,19 +2516,22 @@ if (roomData.session?.active) {
   }
 }
 function startLocalTimer(startTime, totalTime) {
-    clearInterval(timer); // 清除現有的計時器
-    lastQuestionStartTime = startTime;
-    remainingTime = totalTime; // 初始剩餘時間
-
-    // 增加對startTime的驗證
-    const serverTime = Date.now();
-    const timeDiff = Math.abs(serverTime - startTime);
-    // 如果時間差超過5分鐘，可能表示客戶端時間不正確，使用伺服器時間重新計算
-    if (timeDiff > 300000) {
-        console.warn('檢測到客戶端與伺服器時間差異過大，重新校準計時器');
-        // 重新計算 startTime，使其對應於當前剩餘時間
-        startTime = serverTime - (totalTime - remainingTime) * 1000;
-    }
+  clearInterval(timer); // 清除現有的計時器
+  lastQuestionStartTime = startTime;
+  remainingTime = totalTime; // 初始剩餘時間
+  
+  // 加強的時間校準 - 使用相同的閾值
+  const serverTime = Date.now();
+  const timeDiff = Math.abs(serverTime - startTime);
+  const calibrationThreshold = 300000; // 5分鐘
+  
+  if (timeDiff > calibrationThreshold) {
+    console.warn('檢測到客戶端與伺服器時間差異過大，重新校準計時器');
+    // 重新計算 startTime，但限制最大偏移
+    const maxAdjustment = 300000; // 最大校準5分鐘
+    const actualAdjustment = Math.min(maxAdjustment, timeDiff);
+    startTime = serverTime - (totalTime - remainingTime) * 1000 + (startTime > serverTime ? -actualAdjustment : actualAdjustment);
+  }
 
     // 啟動本地計時器
     timer = setInterval(() => {
