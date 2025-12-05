@@ -1778,22 +1778,7 @@ function hideSharedScreen() {
 function calibrateTime(serverTimestamp) {
   const localTimestamp = Date.now();
   const timeDiff = serverTimestamp - localTimestamp;
-  
-  // 提高閾值到5分鐘 (300000毫秒)，避免過於敏感
-  const calibrationThreshold = 300000; // 5分鐘
-  
-  // 檢查時間差是否超過閾值
-  if (Math.abs(timeDiff) > calibrationThreshold) {
-    const now = Date.now();
-    // 防抖機制：至少間隔1分鐘 (60000毫秒) 才顯示一次警告
-    if (now - lastCalibrationWarning > 60000) {
-      console.warn(`客戶端與伺服器時間差異過大: ${timeDiff}ms`);
-      // 顯示警告
-      showTimeSyncWarning(timeDiff);
-      // 更新上次警告時間
-      lastCalibrationWarning = now;
-    }
-  }
+  // 完全移除警告，只保留基本校準邏輯
   return timeDiff;
 }
 function showTimeSyncWarning(timeDiff) {
