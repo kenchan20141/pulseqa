@@ -2386,47 +2386,55 @@ function updateStudentUI(roomData) {
   } else {
     hideSharedScreen();
   }
-  // 更新問題顯示
-  if (roomData.session?.active) {
-    const questionText = roomData.session.question || '請輸入您的回答';
-    questionDisplay.textContent = questionText;
+  // 處理計時狀態
+if (roomData.session?.active) {
+    questionDisplay.textContent = roomData.session.question || '請等待主持人開始計時';
     questionDisplay.classList.remove('text-wabi-secondary');
     questionDisplay.classList.add('text-charcoal');
-    // 啟動本地計時器
-    if (roomData.session.startTime && !timer) {
-      startLocalTimer(roomData.session.startTime, roomData.session.timeLimit);
+
+    // 檢查是否需要根據最新的 roomData 重新同步本地計時器
+    // 這對於處理頁面切換回來後時間不同步非常關鍵
+    if (roomData.session.startTime && roomData.session.timeLimit !== undefined && roomData.session.timeLimit !== null) {
+        // 強制重新啟動本地計時器以與服務器同步
+        startLocalTimer(roomData.session.startTime, roomData.session.timeLimit);
     }
-    // 處理計時狀態
+
+    // 根據剩餘時間更新 UI
     if (remainingTime <= 0) {
-      // 時間已到
-      disableAllInputs();
-      submitBtn.classList.add('hidden');
-      submitBtn.disabled = true;
-      // 只有當學生尚未提交且當前問題匹配時才標記為超時
-      if (!participant.submitted && String(participant.lastQuestionId) === currentQID) {
-        const inputs = container.querySelectorAll('textarea');
-        inputs.forEach(el => {
-          el.disabled = true;
-          el.placeholder = '時間已到,無法提交';
-        });
-      }
+        // 時間已到 (由 startLocalTimer 內部邏輯處理，這裡主要是確保 UI 一致)
+        disableAllInputs();
+        submitBtn.classList.add('hidden');
+        submitBtn.disabled = true;
+        // 不再需要在這裡清除計時器，因為 startLocalTimer 已處理
     } else {
-      // 還有時間
-      enableInputsIfNotSubmitted();
+        // 還有時間
+        enableInputsIfNotSubmitted(); // 啟用輸入 (如果未提交)
+        // 確保提交按鈕在有時間時顯示 (除非已提交)
+        if (!hasSubmitted) {
+             submitBtn.classList.remove('hidden');
+             submitBtn.disabled = false;
+        }
     }
-  } else {
-    // 計時未開始或已結束
+} else {
+    // 計時未開始或房間不存在
     questionDisplay.textContent = '請等待主持人開始計時';
     questionDisplay.classList.add('text-wabi-secondary');
     questionDisplay.classList.remove('text-charcoal');
-    countdownDisplay.textContent = '10:00';
+    countdownDisplay.textContent = '10:00'; // 或者你可以顯示一個指示計時未開始的狀態
+
+    // 清除本地計時器，因為服務器端已停止
+    clearInterval(timer);
+    timer = null;
+    // 重置剩餘時間為0或初始值 (這裡設為0，表示未計時)
+    remainingTime = 0;
+    updateCountdownDisplay(remainingTime);
+
+    // 禁用所有輸入，直到計時開始
     disableAllInputs();
     submitBtn.classList.add('hidden');
     submitBtn.disabled = true;
-    clearInterval(timer);
-    timer = null;
-    hideSharedScreen(); // 確保關閉共享畫面
-  }
+}
+// --- performUIUpdate 結束 ---
   // 輔助函數：禁用所有輸入
   function disableAllInputs() {
     const inputs = container.querySelectorAll('textarea, select, button');
@@ -2485,47 +2493,54 @@ function updateStudentUI(roomData) {
   }
 }
 function startLocalTimer(startTime, totalTime) {
-  clearInterval(timer);
-  lastQuestionStartTime = startTime;
-  remainingTime = totalTime;
- 
-  // 增加對startTime的驗證
-  const serverTime = Date.now();
-  const timeDiff = Math.abs(serverTime - startTime);
- 
-  // 如果時間差超過5分鐘，可能表示客戶端時間不正確，使用伺服器時間重新計算
-  if (timeDiff > 300000) {
-    console.warn('檢測到客戶端與伺服器時間差異過大，重新校準計時器');
-    startTime = serverTime - (totalTime - remainingTime) * 1000;
-  }
- 
-  timer = setInterval(() => {
-    const currentTime = Date.now();
-    // 確保 elapsed 不會是負數
-    const elapsed = Math.max(0, Math.floor((currentTime - startTime) / 1000));
-    // 確保不會超過總時間
-    remainingTime = Math.max(0, Math.min(totalTime, totalTime - elapsed));
-    updateCountdownDisplay(remainingTime);
-   
-    if (remainingTime <= 0) {
-      clearInterval(timer);
-      timer = null;
-      if (!isHost && !hasSubmitted) {
-        const submitBtn = document.getElementById('submitBtn');
-        const inputs = document.querySelectorAll('textarea');
-        if (submitBtn) {
-          submitBtn.classList.add('hidden');
-          submitBtn.disabled = true;
-        }
-        inputs.forEach(el => {
-            el.disabled = true;
-            el.placeholder = '時間已到,無法提交';
-        });
-      }
+    clearInterval(timer); // 清除現有的計時器
+    lastQuestionStartTime = startTime;
+    remainingTime = totalTime; // 初始剩餘時間
+
+    // 增加對startTime的驗證
+    const serverTime = Date.now();
+    const timeDiff = Math.abs(serverTime - startTime);
+    // 如果時間差超過5分鐘，可能表示客戶端時間不正確，使用伺服器時間重新計算
+    if (timeDiff > 300000) {
+        console.warn('檢測到客戶端與伺服器時間差異過大，重新校準計時器');
+        // 重新計算 startTime，使其對應於當前剩餘時間
+        startTime = serverTime - (totalTime - remainingTime) * 1000;
     }
-  }, 1000);
- 
-  updateCountdownDisplay(remainingTime);
+
+    // 啟動本地計時器
+    timer = setInterval(() => {
+        const currentTime = Date.now();
+        // 確保 elapsed 不會是負數
+        const elapsed = Math.max(0, Math.floor((currentTime - startTime) / 1000));
+        // 計算剩餘時間，確保不會小於0或大於總時間
+        let newRemainingTime = Math.max(0, Math.min(totalTime, totalTime - elapsed));
+
+        // 檢查時間是否已到
+        if (newRemainingTime <= 0) {
+            // 時間確實到了或超時了
+            newRemainingTime = 0; // 確保不顯示負數
+            remainingTime = newRemainingTime; // 更新全局剩餘時間
+            updateCountdownDisplay(remainingTime); // 更新顯示
+
+            // 執行時間結束的邏輯
+            disableAllInputs(); // 禁用輸入
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) { // 確保按鈕存在
+                submitBtn.classList.add('hidden');
+                submitBtn.disabled = true;
+            }
+
+            // 清除計時器！這是防止重新計時的關鍵
+            clearInterval(timer);
+            timer = null; // 重置計時器引用
+            return; // 提前退出，不再執行後續邏輯
+        }
+
+        // 更新剩餘時間並顯示（只有在時間未結束時）
+        remainingTime = newRemainingTime;
+        updateCountdownDisplay(remainingTime);
+
+    }, 1000); // 每秒更新一次
 }
  
 function updateCountdownDisplay(seconds) {
