@@ -2702,41 +2702,68 @@ function updateHostUI(roomData) {
   updateCountdownDisplay(remainingTime);
 }
 
-function startHostTimer(startTime, totalTime) {
-  // 清除現有的主持人計時器
+function startHostTimer() {
+  // 清除現有計時器
   if (hostTimer) {
     clearInterval(hostTimer);
     hostTimer = null;
   }
   
-  // 更新全域變數
-  lastQuestionStartTime = startTime;
-  timeLimit = totalTime;
+  // 【關鍵】使用本地時間作為參考
+  lastQuestionStartTime = Date.now();
   
-  // 初始化剩餘時間
-  const now = Date.now();
-  let elapsed = Math.max(0, Math.floor((now - startTime) / 1000));
-  remainingTime = Math.max(0, totalTime - elapsed);
-  
-  // 立即更新顯示
+  // 更新顯示
   updateCountdownDisplay(remainingTime);
   
-  // 【關鍵修訂】只使用 hostTimer 作為主持人計時器
+  // 启动独立的主持人計時器
   hostTimer = setInterval(() => {
-    const currentTime = Date.now();
-    elapsed = Math.max(0, Math.floor((currentTime - startTime) / 1000));
-    remainingTime = Math.max(0, totalTime - elapsed);
+    if (!sessionActive) {
+      clearInterval(hostTimer);
+      hostTimer = null;
+      return;
+    }
+    
+    // 計算剩餘時間
+    const elapsed = Math.floor((Date.now() - lastQuestionStartTime) / 1000);
+    remainingTime = Math.max(0, timeLimit - elapsed);
     
     // 更新顯示
     updateCountdownDisplay(remainingTime);
     
-    // 檢查是否時間已到
+    // 時間到
     if (remainingTime <= 0) {
       clearInterval(hostTimer);
       hostTimer = null;
-      endSession(); // 自動結束會議
+      // 嘗試更新 Firebase
+      if (currentRoom) {
+        database.ref('class_rooms/' + currentRoom + '/session').update({
+          active: false,
+          endTime: firebase.database.ServerValue.TIMESTAMP
+        }).catch(error => {
+          console.warn('無法更新 Firebase，但本地計時已完成', error);
+        });
+      }
     }
   }, 1000);
+}
+
+function useLocalSession() {
+  sessionActive = !sessionActive;
+  
+  if (sessionActive) {
+    const question = document.getElementById('questionInput').value.trim();
+    document.getElementById('questionDisplay').textContent = question;
+    document.getElementById('startBtn').innerHTML = '<i class="fas fa-pause mr-2"></i>暫停';
+    
+    startHostTimer();
+  } else {
+    clearInterval(hostTimer);
+    hostTimer = null;
+    document.getElementById('startBtn').innerHTML = '<i class="fas fa-play mr-2"></i>開始';
+  }
+  
+  // 更新 UI
+  updateCountdownDisplay(remainingTime);
 }
 	
  
@@ -3052,88 +3079,110 @@ async function startSession() {
       return;
     }
   }
-  const sessionRef = database.ref('class_rooms/' + currentRoom + '/session');
-  const sessionSnapshot = await sessionRef.once('value');
-  const currentSession = sessionSnapshot.val();
+  
   // 清除現有計時器
   if (timer) {
     clearInterval(timer);
     timer = null;
   }
-  // 清除主持人計時器
   if (hostTimer) {
     clearInterval(hostTimer);
     hostTimer = null;
   }
-  if (currentSession.active) {
+  
+  // 【關鍵修訂】檢查 Firebase 連線狀態
+  let firebaseConnected = true;
+  try {
+    await database.ref('.info/connected').once('value');
+  } catch (error) {
+    console.warn('Firebase 連線異常，將使用本地計時器', error);
+    firebaseConnected = false;
+  }
+  
+  if (!firebaseConnected) {
+    // 使用純本地模式
+    alert('無法連接 Firebase 服務，將使用本地計時器。學生端可能無法同步看到問題和計時。');
+    useLocalSession();
+    return;
+  }
+  
+  // 原有的 Firebase 寫入邏輯
+  const sessionRef = database.ref('class_rooms/' + currentRoom + '/session');
+  const sessionSnapshot = await sessionRef.once('value').catch(() => null);
+  const currentSession = sessionSnapshot ? sessionSnapshot.val() : null;
+  
+  if (currentSession && currentSession.active) {
     // 暫停會話
     await sessionRef.update({
       active: false,
       sharingScreen: false
+    }).catch(error => {
+      console.error('無法更新 Firebase，切換到本地模式', error);
+      useLocalSession();
+      return;
     });
     sessionActive = false;
-    // 隱藏分享按鈕
     document.getElementById('shareScreenBtn').classList.add('hidden');
-    // 更新按鈕文本
-    const shareScreenBtnText = document.getElementById('shareScreenBtnText');
-    if (shareScreenBtnText) {
-      shareScreenBtnText.textContent = '同步畫面';
-    }
   } else {
-    // 開始會話 - 關鍵是使用 Firebase 伺服器時間
+    // 開始會話
     const newQuestionId = Date.now();
     currentQuestionId = newQuestionId;
     const mode = document.querySelector('input[name="questionMode"]:checked').value;
     const outlineType = document.querySelector('input[name="outlineType"]:checked').value;
     const outlineConfig = { type: outlineType };
-    // 關鍵修改：使用 Firebase 伺服器時間戳
-    const sessionUpdate = {
-      answers: {},
-      session: {
+    
+    try {
+      // 先更新 session
+      const sessionUpdate = {
         active: true,
         question: question,
         questionId: newQuestionId,
         timeLimit: timeLimit,
-        startTime: firebase.database.ServerValue.TIMESTAMP, // 使用服務器時間
+        startTime: firebase.database.ServerValue.TIMESTAMP,
         endTime: null,
         mode: mode,
         outlineConfig: outlineConfig,
         sharingScreen: false
+      };
+      
+      await database.ref('class_rooms/' + currentRoom + '/session').update(sessionUpdate);
+      
+      // 重置答案
+      await database.ref('class_rooms/' + currentRoom + '/answers').set({});
+      
+      // 重置所有參與者狀態
+      const participantsRef = database.ref('class_rooms/' + currentRoom + '/participants');
+      const participantsSnapshot = await participantsRef.once('value').catch(() => null);
+      const participants = participantsSnapshot ? participantsSnapshot.val() : null;
+      
+      if (participants) {
+        const updatePromises = [];
+        for (const name in participants) {
+          if (participants.hasOwnProperty(name)) {
+            updatePromises.push(
+              participantsRef.child(name).update({
+                submitted: false,
+                late: false,
+                lastQuestionId: newQuestionId
+              })
+            );
+          }
+        }
+        await Promise.all(updatePromises);
       }
-    };
-    await database.ref('class_rooms/' + currentRoom).update(sessionUpdate);
-    // 重置所有參與者狀態
-    const participantsRef = database.ref('class_rooms/' + currentRoom + '/participants');
-    const participantsSnapshot = await participantsRef.once('value');
-    const participants = participantsSnapshot.val() || {};
-    for (const name in participants) {
-      if (participants.hasOwnProperty(name)) {
-        await participantsRef.child(name).update({
-          submitted: false,
-          late: false,
-          lastQuestionId: newQuestionId
-        });
-      }
+      
+      sessionActive = true;
+      remainingTime = timeLimit;
+      document.getElementById('shareScreenBtn').classList.remove('hidden');
+      updateCountdownDisplay(remainingTime);
+      
+      // 【關鍵】重新設計主持人計時器
+      startHostTimer();
+      
+    } catch (error) {
+      console.error('Firebase 寫入失敗，切換到本地模式', error);
+      useLocalSession();
     }
-    sessionActive = true;
-    remainingTime = timeLimit;
-    // 顯示分享按鈕
-    document.getElementById('shareScreenBtn').classList.remove('hidden');
-    // 立即更新顯示
-    updateCountdownDisplay(remainingTime);
-    // 【新增】啟動主持人端獨立計時器
-    if (hostTimer) {
-      clearInterval(hostTimer);
-    }
-    hostTimer = setInterval(() => {
-      if (remainingTime > 0) {
-        remainingTime--;
-        updateCountdownDisplay(remainingTime);
-      } else {
-        clearInterval(hostTimer);
-        hostTimer = null;
-      }
-    }, 1000);
   }
 }
  
