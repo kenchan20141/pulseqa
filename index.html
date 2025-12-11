@@ -1430,7 +1430,7 @@ input[type=range]::-webkit-slider-thumb {
 </div>
 <div class="time-button-wrapper">
     <button id="shareScreenBtn" onclick="toggleScreenSharing()" class="wabi-sabi-button secondary px-7 py-3.5 rounded-xl font-medium text-lg hidden mr-3">
-        <i class="fas fa-broadcast-tower mr-2"></i><span id="shareScreenBtnText">同步畫面</span>
+        <i class="fas fa-broadcast-tower mr-2"></i><span id="shareScreenBtnText"></span>
     </button>
     <button id="startBtn" onclick="startSession()" class="wabi-sabi-button primary px-7 py-3.5 rounded-xl font-medium text-lg">
         <i class="fas fa-play mr-2"></i>開始
@@ -2640,7 +2640,7 @@ function updateCountdownDisplay(seconds) {
 function updateHostUI(roomData) {
   // 更新按鈕狀態
   if (roomData.session.active && roomData.session.startTime) {
-    document.getElementById('startBtn').innerHTML = '<i class="fas fa-pause mr-2"></i>暫停';
+    document.getElementById('startBtn').innerHTML = '<i class="fas fa-pause mr-2"></i>';
     
     // 【重要修訂】統一使用 hostTimer 計時器
     if (!hostTimer) {
