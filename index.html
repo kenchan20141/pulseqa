@@ -1777,8 +1777,24 @@ function hideSharedScreen() {
 // 增加這個函數在檔案頂部（全域變數區域之後）
 function calibrateTime(serverTimestamp) {
   const localTimestamp = Date.now();
-  const timeDiff = serverTimestamp - localTimestamp;
-  // 完全移除警告，只保留基本校準邏輯
+  let timeDiff = 0;
+  
+  // 處理 Firebase 服務器時間戳對象
+  if (typeof serverTimestamp === 'object' && serverTimestamp.hasOwnProperty('.sv')) {
+    console.warn('收到 Firebase 伺服器時間戳對象，使用本地時間校準');
+    timeDiff = 0; // 無法精確校準，使用本地時間
+  } else if (typeof serverTimestamp === 'number') {
+    timeDiff = serverTimestamp - localTimestamp;
+  } else {
+    console.error('無效的伺服器時間戳格式:', serverTimestamp);
+    timeDiff = 0;
+  }
+  
+  // 只在差異過大時記錄警告
+  if (Math.abs(timeDiff) > 10000) { // 10秒
+    console.warn(`客戶端與伺服器時間相差 ${Math.round(timeDiff/1000)} 秒`);
+  }
+  
   return timeDiff;
 }
 function showTimeSyncWarning(timeDiff) {
@@ -1996,30 +2012,33 @@ function setupRoomListener() {
   let updateTimeout = null;
   let lastUpdateTime = 0;
   const MIN_UPDATE_INTERVAL = 300;
- 
+  
   roomRef.on('value', (snapshot) => {
     if (!snapshot.exists()) {
       alert('房間已不存在');
       showMainMenu();
       return;
     }
+    
     const roomData = snapshot.val();
-   
-    // 時間校準
-    if (roomData.session && roomData.session.startTime) {
+    
+    // 時間校準 - 只在會話活動時進行
+    if (roomData.session?.active && roomData.session.startTime) {
       calibrateTime(roomData.session.startTime);
     }
-   
-    const currentTime = Date.now();
-    const isCriticalUpdate =
+    
+    // 檢查是否為關鍵更新 (計時相關)
+    const isCriticalUpdate = 
       roomData.session?.active !== sessionActive ||
-      !roomData.session?.active;
-   
-    if (isCriticalUpdate || (currentTime - lastUpdateTime) > MIN_UPDATE_INTERVAL) {
-      clearTimeout(updateTimeout);
+      (roomData.session?.active && roomData.session.startTime !== lastQuestionStartTime) ||
+      (roomData.session?.active && roomData.session.timeLimit !== timeLimit);
+    
+    if (isCriticalUpdate) {
+      // 關鍵更新 - 立即執行，不使用去抖
       performUIUpdate(roomData);
-      lastUpdateTime = currentTime;
+      lastUpdateTime = Date.now();
     } else {
+      // 非關鍵更新 - 使用去抖
       clearTimeout(updateTimeout);
       updateTimeout = setTimeout(() => {
         performUIUpdate(roomData);
@@ -2395,54 +2414,73 @@ function updateStudentUI(roomData) {
     hideSharedScreen();
   }
   // 處理計時狀態
-if (roomData.session?.active) {
+  if (roomData.session?.active) {
     questionDisplay.textContent = roomData.session.question || '請等待主持人開始計時';
     questionDisplay.classList.remove('text-wabi-secondary');
     questionDisplay.classList.add('text-charcoal');
-
-    // 檢查是否需要根據最新的 roomData 重新同步本地計時器
-    // 這對於處理頁面切換回來後時間不同步非常關鍵
-    if (roomData.session.startTime && roomData.session.timeLimit !== undefined && roomData.session.timeLimit !== null) {
-        // 強制重新啟動本地計時器以與服務器同步
-        startLocalTimer(roomData.session.startTime, roomData.session.timeLimit);
+    
+    // 處理 startTime - 轉換 Firebase 伺服器時間戳
+    let serverStartTime = roomData.session.startTime;
+    // 檢查是否為 Firebase 服務器時間戳對象
+    if (typeof serverStartTime === 'object' && serverStartTime.hasOwnProperty('.sv')) {
+      // 使用本地時間作為補償，但記錄警告
+      console.warn('收到 Firebase 服務器時間戳對象，使用本地時間作為起始點');
+      serverStartTime = Date.now();
     }
-
+    
+    // 確保 startTime 是有效的數字
+    if (typeof serverStartTime !== 'number' || isNaN(serverStartTime)) {
+      console.error('無效的開始時間格式:', serverStartTime);
+      serverStartTime = Date.now();
+    }
+    
+    // 確保計時器已啟動並同步
+    if (roomData.session.timeLimit !== undefined && roomData.session.timeLimit !== null) {
+      // 檢查是否需要重新啟動計時器
+      const needsNewTimer = !timer || 
+                           lastQuestionStartTime !== serverStartTime || 
+                           timeLimit !== roomData.session.timeLimit;
+      
+      if (needsNewTimer) {
+        startLocalTimer(serverStartTime, roomData.session.timeLimit);
+      }
+    }
+    
     // 根據剩餘時間更新 UI
     if (remainingTime <= 0) {
-        // 時間已到 (由 startLocalTimer 內部邏輯處理，這裡主要是確保 UI 一致)
-        disableAllInputs();
-        submitBtn.classList.add('hidden');
-        submitBtn.disabled = true;
-        // 不再需要在這裡清除計時器，因為 startLocalTimer 已處理
+      // 時間已到
+      disableAllInputs();
+      submitBtn.classList.add('hidden');
+      submitBtn.disabled = true;
     } else {
-        // 還有時間
-        enableInputsIfNotSubmitted(); // 啟用輸入 (如果未提交)
-        // 確保提交按鈕在有時間時顯示 (除非已提交)
-        if (!hasSubmitted) {
-             submitBtn.classList.remove('hidden');
-             submitBtn.disabled = false;
-        }
+      // 還有時間
+      enableInputsIfNotSubmitted(); // 啟用輸入 (如果未提交)
+      // 確保提交按鈕在有時間時顯示 (除非已提交)
+      if (!hasSubmitted) {
+        submitBtn.classList.remove('hidden');
+        submitBtn.disabled = false;
+      }
     }
-} else {
+  } else {
     // 計時未開始或房間不存在
     questionDisplay.textContent = '請等待主持人開始計時';
     questionDisplay.classList.add('text-wabi-secondary');
     questionDisplay.classList.remove('text-charcoal');
-    countdownDisplay.textContent = '10:00'; // 或者你可以顯示一個指示計時未開始的狀態
-
+    countdownDisplay.textContent = '10:00';
     // 清除本地計時器，因為服務器端已停止
-    clearInterval(timer);
-    timer = null;
-    // 重置剩餘時間為0或初始值 (這裡設為0，表示未計時)
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+    // 重置剩餘時間
     remainingTime = 0;
     updateCountdownDisplay(remainingTime);
-
     // 禁用所有輸入，直到計時開始
     disableAllInputs();
     submitBtn.classList.add('hidden');
     submitBtn.disabled = true;
-}
-// --- performUIUpdate 結束 ---
+  }
+  
   // 輔助函數：禁用所有輸入
   function disableAllInputs() {
     const inputs = container.querySelectorAll('textarea, select, button');
@@ -2453,6 +2491,7 @@ if (roomData.session?.active) {
       }
     });
   }
+  
   // 輔助函數：如果未提交則啟用輸入
   function enableInputsIfNotSubmitted() {
     // 檢查學生是否已針對當前問題提交
@@ -2460,7 +2499,7 @@ if (roomData.session?.active) {
     const hasSubmittedCurrentQuestion =
       participant.submitted &&
       String(participant.lastQuestionId) === currentQID;
-     
+    
     if (hasSubmittedCurrentQuestion) {
       // 已提交當前問題
       hasSubmitted = true;
@@ -2501,57 +2540,68 @@ if (roomData.session?.active) {
   }
 }
 function startLocalTimer(startTime, totalTime) {
-  clearInterval(timer); // 清除現有的計時器
-  lastQuestionStartTime = startTime;
-  remainingTime = totalTime; // 初始剩餘時間
-  
-  // 加強的時間校準 - 使用相同的閾值
-  const serverTime = Date.now();
-  const timeDiff = Math.abs(serverTime - startTime);
-  const calibrationThreshold = 300000; // 5分鐘
-  
-  if (timeDiff > calibrationThreshold) {
-    console.warn('檢測到客戶端與伺服器時間差異過大，重新校準計時器');
-    // 重新計算 startTime，但限制最大偏移
-    const maxAdjustment = 300000; // 最大校準5分鐘
-    const actualAdjustment = Math.min(maxAdjustment, timeDiff);
-    startTime = serverTime - (totalTime - remainingTime) * 1000 + (startTime > serverTime ? -actualAdjustment : actualAdjustment);
+  // 清除現有的計時器
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
   }
-
-    // 啟動本地計時器
-    timer = setInterval(() => {
-        const currentTime = Date.now();
-        // 確保 elapsed 不會是負數
-        const elapsed = Math.max(0, Math.floor((currentTime - startTime) / 1000));
-        // 計算剩餘時間，確保不會小於0或大於總時間
-        let newRemainingTime = Math.max(0, Math.min(totalTime, totalTime - elapsed));
-
-        // 檢查時間是否已到
-        if (newRemainingTime <= 0) {
-            // 時間確實到了或超時了
-            newRemainingTime = 0; // 確保不顯示負數
-            remainingTime = newRemainingTime; // 更新全局剩餘時間
-            updateCountdownDisplay(remainingTime); // 更新顯示
-
-            // 執行時間結束的邏輯
-            disableAllInputs(); // 禁用輸入
-            const submitBtn = document.getElementById('submitBtn');
-            if (submitBtn) { // 確保按鈕存在
-                submitBtn.classList.add('hidden');
-                submitBtn.disabled = true;
-            }
-
-            // 清除計時器！這是防止重新計時的關鍵
-            clearInterval(timer);
-            timer = null; // 重置計時器引用
-            return; // 提前退出，不再執行後續邏輯
-        }
-
-        // 更新剩餘時間並顯示（只有在時間未結束時）
-        remainingTime = newRemainingTime;
-        updateCountdownDisplay(remainingTime);
-
-    }, 1000); // 每秒更新一次
+  
+  // 驗證參數
+  if (typeof startTime !== 'number' || isNaN(startTime) || startTime <= 0) {
+    console.error('無效的開始時間:', startTime);
+    startTime = Date.now();
+  }
+  
+  if (typeof totalTime !== 'number' || isNaN(totalTime) || totalTime <= 0) {
+    console.error('無效的總時間:', totalTime);
+    totalTime = 600; // 預設10分鐘
+  }
+  
+  // 更新全域變數
+  lastQuestionStartTime = startTime;
+  timeLimit = totalTime;
+  
+  // 初始化剩餘時間
+  const now = Date.now();
+  const elapsed = Math.max(0, Math.floor((now - startTime) / 1000));
+  remainingTime = Math.max(0, totalTime - elapsed);
+  
+  // 立即更新顯示
+  updateCountdownDisplay(remainingTime);
+  
+  // 啟動計時器
+  timer = setInterval(() => {
+    const currentTime = Date.now();
+    const elapsed = Math.max(0, Math.floor((currentTime - startTime) / 1000));
+    remainingTime = Math.max(0, totalTime - elapsed);
+    
+    // 更新顯示
+    updateCountdownDisplay(remainingTime);
+    
+    // 檢查是否時間已到
+    if (remainingTime <= 0) {
+      clearInterval(timer);
+      timer = null;
+      
+      // 時間結束處理
+      const container = document.getElementById('studentInputContainer');
+      if (container) {
+        const inputs = container.querySelectorAll('textarea, select, button');
+        inputs.forEach(el => {
+          el.disabled = true;
+          if (el.tagName === 'TEXTAREA') {
+            el.placeholder = '時間已到，無法繼續輸入';
+          }
+        });
+      }
+      
+      const submitBtn = document.getElementById('submitBtn');
+      if (submitBtn) {
+        submitBtn.classList.add('hidden');
+        submitBtn.disabled = true;
+      }
+    }
+  }, 1000);
 }
  
 function updateCountdownDisplay(seconds) {
@@ -2987,11 +3037,16 @@ async function startSession() {
     clearInterval(timer);
     timer = null;
   }
+  // 清除主持人計時器
+  if (hostTimer) {
+    clearInterval(hostTimer);
+    hostTimer = null;
+  }
   if (currentSession.active) {
     // 暫停會話
     await sessionRef.update({
       active: false,
-      sharingScreen: false // 停止共享
+      sharingScreen: false
     });
     sessionActive = false;
     // 隱藏分享按鈕
@@ -3002,30 +3057,31 @@ async function startSession() {
       shareScreenBtnText.textContent = '同步畫面';
     }
   } else {
-    // 開始會話
+    // 開始會話 - 關鍵是使用 Firebase 伺服器時間
     const newQuestionId = Date.now();
     currentQuestionId = newQuestionId;
     const mode = document.querySelector('input[name="questionMode"]:checked').value;
     const outlineType = document.querySelector('input[name="outlineType"]:checked').value;
-    const outlineConfig = {
-        type: outlineType
-    };
-    // 獲取伺服器時間以確保準確性
-    const serverTime = Date.now();
-    await database.ref('class_rooms/' + currentRoom).update({
+    const outlineConfig = { type: outlineType };
+    
+    // 關鍵修改：使用 Firebase 伺服器時間戳
+    const sessionUpdate = {
       answers: {},
       session: {
         active: true,
         question: question,
         questionId: newQuestionId,
         timeLimit: timeLimit,
-        startTime: serverTime,
+        startTime: firebase.database.ServerValue.TIMESTAMP, // 使用服務器時間
         endTime: null,
         mode: mode,
         outlineConfig: outlineConfig,
-        sharingScreen: false // 初始狀態為不共享
+        sharingScreen: false
       }
-    });
+    };
+    
+    await database.ref('class_rooms/' + currentRoom).update(sessionUpdate);
+    
     // 重置所有參與者狀態
     const participantsRef = database.ref('class_rooms/' + currentRoom + '/participants');
     const participantsSnapshot = await participantsRef.once('value');
@@ -3039,12 +3095,27 @@ async function startSession() {
         });
       }
     }
+    
     sessionActive = true;
     remainingTime = timeLimit;
     // 顯示分享按鈕
     document.getElementById('shareScreenBtn').classList.remove('hidden');
     // 立即更新顯示
     updateCountdownDisplay(remainingTime);
+    
+    // 【新增】啟動主持人端獨立計時器
+    if (hostTimer) {
+      clearInterval(hostTimer);
+    }
+    hostTimer = setInterval(() => {
+      if (remainingTime > 0) {
+        remainingTime--;
+        updateCountdownDisplay(remainingTime);
+      } else {
+        clearInterval(hostTimer);
+        hostTimer = null;
+      }
+    }, 1000);
   }
 }
  
