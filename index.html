@@ -1405,6 +1405,7 @@ input[type=range]::-webkit-slider-thumb {
 <div class="mode-selector">
   <label><input type="radio" name="questionMode" value="qa" checked onclick="toggleMode()"> 問答模式</label>
   <label><input type="radio" name="questionMode" value="outline" onclick="toggleMode()"> 大綱模式</label>
+  <label><input type="radio" name="questionMode" value="extended" onclick="toggleMode()"> 拓展模式</label>
 </div>
 <!-- 大綱選項 (隱藏/顯示) -->
 <div id="outlineConfig" class="outline-options hidden p-4 bg-earth-beige rounded-lg border border-gray-200">
@@ -1552,8 +1553,10 @@ input[type=range]::-webkit-slider-thumb {
 <div class="countdown-display mb-10" id="studentCountdown">10:00</div>
 <div id="answerInputArea" class="answer-input-area mb-9">
   <div id="studentInputContainer">
-    <!-- 這裡將動態生成：文字框 或 大綱表格 -->
     <textarea id="studentAnswer" class="input-field w-full px-5 py-4 rounded-xl min-h-[160px] text-lg resize-y" placeholder="請在此輸入您的回答..." disabled></textarea>
+  </div>
+  <div id="wordCountDisplay" class="text-right mt-2 text-wabi-secondary hidden">
+    剩餘字數: <span id="remainingWords">180</span>
   </div>
 </div>
 <div class="flex justify-center gap-4">
@@ -2236,25 +2239,84 @@ function closeFullscreenCountdown() {
 function toggleMode() {
   const mode = document.querySelector('input[name="questionMode"]:checked').value;
   const outlineConfig = document.getElementById('outlineConfig');
+  const wordCountDisplay = document.getElementById('wordCountDisplay');
+  const studentAnswer = document.getElementById('studentAnswer');
+  
   if (mode === 'outline') {
     outlineConfig.classList.remove('hidden');
+    if (wordCountDisplay) wordCountDisplay.classList.add('hidden');
   } else {
     outlineConfig.classList.add('hidden');
   }
+  
+  // 拓展模式特殊處理
+  if (mode === 'extended') {
+    // 關鍵修訂：確保字數計數器可見
+    if (wordCountDisplay) {
+      wordCountDisplay.classList.remove('hidden');
+      // 重置字數顯示
+      const remainingWordsElement = document.getElementById('remainingWords');
+      if (remainingWordsElement) remainingWordsElement.textContent = '180';
+    }
+    // 設置輸入框屬性
+    if (studentAnswer) {
+      studentAnswer.maxLength = 180;
+      studentAnswer.placeholder = '請在此輸入您的回答 (最多180字)...';
+    }
+  } else {
+    if (wordCountDisplay) wordCountDisplay.classList.add('hidden');
+    if (studentAnswer) {
+      studentAnswer.removeAttribute('maxLength');
+      studentAnswer.placeholder = '請在此輸入您的回答...';
+    }
+  }
 }
 // Student Configuration Logic
-function renderStudentOutlineUI(type) {
+function renderStudentOutlineUI(mode) {
   const container = document.getElementById('studentInputContainer');
+  const existingWordCount = document.getElementById('wordCountDisplay');
+  if (existingWordCount) existingWordCount.remove();
+  
   container.innerHTML = '';
- 
+  
+  if (mode === 'extended') {
+    // 拓展模式 - 文本輸入框 + 字數限制
+    const textarea = document.createElement('textarea');
+    textarea.id = 'studentAnswer';
+    textarea.className = 'input-field w-full px-5 py-4 rounded-xl min-h-[160px] text-lg no-modal-editor';
+    textarea.placeholder = '請在此輸入您的回答 (最多180字)...';
+    textarea.maxLength = 180;
+    textarea.disabled = true; // 初始禁用，等待計時開始
+    container.appendChild(textarea);
+    
+    // 添加字數顯示 - 關鍵修訂：移除 hidden 類別
+    const wordCountDiv = document.createElement('div');
+    wordCountDiv.id = 'wordCountDisplay';
+    wordCountDiv.className = 'text-right mt-2 text-wabi-secondary'; // 移除 hidden 類別
+    wordCountDiv.innerHTML = '剩餘字數: <span id="remainingWords">180</span>';
+    container.appendChild(wordCountDiv);
+    
+    return;
+  } else if (mode === 'qa') {
+    // 普通問答模式
+    const textarea = document.createElement('textarea');
+    textarea.id = 'studentAnswer';
+    textarea.className = 'input-field w-full px-5 py-4 rounded-xl min-h-[160px] text-lg no-modal-editor';
+    textarea.placeholder = '請在此輸入您的回答...';
+    textarea.disabled = true;
+    container.appendChild(textarea);
+    return;
+  }
+  
+  // 原有的大綱模式代碼
   const configDiv = document.createElement('div');
   configDiv.className = 'student-config-area';
- 
+  const type = mode === 'outline' ? (document.querySelector('input[name="outlineType"]:checked').value || 'narrative') : 'narrative';
+  
   if (type === 'narrative') {
     const label = document.createElement('span');
     label.innerText = '選擇結構: ';
     label.className = 'font-bold text-charcoal';
-   
     const select = document.createElement('select');
     select.className = 'config-select';
     select.innerHTML = `
@@ -2265,32 +2327,26 @@ function renderStudentOutlineUI(type) {
       studentNarrativeStructure = e.target.value;
       renderNarrativeTable();
     };
-   
     configDiv.appendChild(label);
     configDiv.appendChild(select);
     container.appendChild(configDiv);
     renderNarrativeTable();
-   
   } else { // argument
     const label = document.createElement('span');
     label.innerText = '結構段數量: ';
     label.className = 'font-bold text-charcoal';
-   
     const minusBtn = document.createElement('button');
     minusBtn.className = 'outline-control-btn';
     minusBtn.innerHTML = '<i class="fas fa-minus"></i>';
     minusBtn.onclick = () => { changeStudentArgSegments(-1); };
-   
     const countSpan = document.createElement('span');
     countSpan.id = 'studentArgCount';
     countSpan.className = 'font-bold text-lg w-6 text-center';
     countSpan.innerText = studentArgSegments;
-   
     const plusBtn = document.createElement('button');
     plusBtn.className = 'outline-control-btn';
     plusBtn.innerHTML = '<i class="fas fa-plus"></i>';
     plusBtn.onclick = () => { changeStudentArgSegments(1); };
-   
     configDiv.appendChild(label);
     configDiv.appendChild(minusBtn);
     configDiv.appendChild(countSpan);
@@ -2299,6 +2355,33 @@ function renderStudentOutlineUI(type) {
     renderArgumentTable();
   }
 }
+
+
+function countWords() {
+  const studentAnswer = document.getElementById('studentAnswer');
+  const remainingWordsElement = document.getElementById('remainingWords');
+  
+  if (!studentAnswer || !remainingWordsElement) return;
+  
+  const currentText = studentAnswer.value || '';
+  const remaining = 180 - currentText.length;
+  
+  remainingWordsElement.textContent = remaining;
+  
+  // 如果字數接近限制，改變顏色提示
+  if (remaining < 0) {
+    remainingWordsElement.style.color = '#a86b6b';
+    studentAnswer.style.borderColor = '#a86b6b';
+  } else if (remaining < 20) {
+    remainingWordsElement.style.color = '#8a7663';
+    studentAnswer.style.borderColor = '#8a7663';
+  } else {
+    remainingWordsElement.style.color = '';
+    studentAnswer.style.borderColor = '';
+  }
+}
+
+	
 function changeStudentArgSegments(delta) {
   studentArgSegments += delta;
   if (studentArgSegments < 1) studentArgSegments = 1;
@@ -2365,16 +2448,21 @@ function updateStudentUI(roomData) {
   const answerInputArea = document.getElementById('answerInputArea');
   const container = document.getElementById('studentInputContainer');
   const participant = roomData.participants?.[currentUser] || {};
+  const wordCountDisplay = document.getElementById('wordCountDisplay');
+
   // 確保 container 存在
   if (!container) return;
+
   // 獲取當前回合 ID 和已渲染的回合 ID
   const currentMode = roomData.session?.mode || 'qa';
   const currentQID = roomData.session?.questionId ? String(roomData.session.questionId) : null;
   const renderedQID = container.getAttribute('data-qid');
+
   // 檢查是否需要更新 UI (模式變更、問題 ID 變更、或首次加載)
   const needsUIUpdate = currentMode !== container.getAttribute('data-mode') ||
                         currentQID !== renderedQID ||
                         !container.hasChildNodes();
+
   if (needsUIUpdate && currentQID) {
     // 保存滾動位置
     const scrollPos = container.scrollTop;
@@ -2382,37 +2470,42 @@ function updateStudentUI(roomData) {
     container.innerHTML = '';
     container.setAttribute('data-mode', currentMode);
     container.setAttribute('data-qid', currentQID);
-    // 重置所有本地提交狀態 - 這是關鍵修復
+    // 重置所有本地提交狀態
     hasSubmitted = false;
     submissionStatus.classList.add('hidden');
     answerInputArea.classList.remove('submitted', 'late');
     // 隱藏下載按鈕
     const downloadBtn = document.getElementById('downloadMyAnswerBtn');
     if (downloadBtn) downloadBtn.classList.add('hidden');
+    
     // 根據模式創建適當的輸入元素
     if (currentMode === 'qa') {
-      const textarea = document.createElement('textarea');
-      textarea.id = 'studentAnswer';
-      textarea.className = 'input-field w-full px-5 py-4 rounded-xl min-h-[160px] text-lg no-modal-editor';
-      textarea.placeholder = '請在此輸入您的回答...';
-      textarea.disabled = true; // 初始禁用，等待計時開始
-      container.appendChild(textarea);
+      renderStudentOutlineUI('qa');
+    } else if (currentMode === 'extended') {
+      renderStudentOutlineUI('extended');
+      // 關鍵修訂：確保字數計數器可見
+      if (wordCountDisplay) {
+        wordCountDisplay.classList.remove('hidden');
+        // 設置初始字數
+        document.getElementById('remainingWords').textContent = '180';
+      }
     } else if (currentMode === 'outline') {
       const type = roomData.session?.outlineConfig?.type || 'narrative';
-      renderStudentOutlineUI(type);
-      // 禁用所有輸入元素，等待計時開始
-      const inputs = container.querySelectorAll('textarea, select, button');
-      inputs.forEach(el => el.disabled = true);
+      renderStudentOutlineUI('outline');
+      // 隱藏字數計數器
+      if (wordCountDisplay) wordCountDisplay.classList.add('hidden');
     }
     // 恢復滾動位置
     container.scrollTop = scrollPos;
   }
+
   // 處理畫面同步
   if (roomData.session && roomData.session.sharingScreen && roomData.session.active) {
     showSharedScreen(roomData);
   } else {
     hideSharedScreen();
   }
+
   // 處理計時狀態
   if (roomData.session?.active) {
     questionDisplay.textContent = roomData.session.question || '請等待主持人開始計時';
@@ -2427,25 +2520,21 @@ function updateStudentUI(roomData) {
       console.warn('收到 Firebase 服務器時間戳對象，使用本地時間作為起始點');
       serverStartTime = Date.now();
     }
-    
     // 確保 startTime 是有效的數字
     if (typeof serverStartTime !== 'number' || isNaN(serverStartTime)) {
       console.error('無效的開始時間格式:', serverStartTime);
       serverStartTime = Date.now();
     }
-    
     // 確保計時器已啟動並同步
     if (roomData.session.timeLimit !== undefined && roomData.session.timeLimit !== null) {
       // 檢查是否需要重新啟動計時器
       const needsNewTimer = !timer || 
                            lastQuestionStartTime !== serverStartTime || 
                            timeLimit !== roomData.session.timeLimit;
-      
       if (needsNewTimer) {
         startLocalTimer(serverStartTime, roomData.session.timeLimit);
       }
     }
-    
     // 根據剩餘時間更新 UI
     if (remainingTime <= 0) {
       // 時間已到
@@ -2459,6 +2548,30 @@ function updateStudentUI(roomData) {
       if (!hasSubmitted) {
         submitBtn.classList.remove('hidden');
         submitBtn.disabled = false;
+      }
+    }
+    
+    // 如果是拓展模式，設置字數監聽
+    if (currentMode === 'extended') {
+      const studentAnswer = document.getElementById('studentAnswer');
+      if (studentAnswer) {
+        // 先移除可能存在的重複監聽器
+        studentAnswer.removeEventListener('input', countWords);
+        studentAnswer.addEventListener('input', countWords);
+        // 觸發初始計數
+        countWords();
+        
+        // 關鍵修訂：確保字數計數器元素存在且顯示
+        let wordCountElement = document.getElementById('wordCountDisplay');
+        if (!wordCountElement) {
+          // 重新創建字數計數器
+          wordCountElement = document.createElement('div');
+          wordCountElement.id = 'wordCountDisplay';
+          wordCountElement.className = 'text-right mt-2 text-wabi-secondary';
+          wordCountElement.innerHTML = '剩餘字數: <span id="remainingWords">180</span>';
+          container.appendChild(wordCountElement);
+        }
+        wordCountElement.classList.remove('hidden');
       }
     }
   } else {
@@ -2479,8 +2592,11 @@ function updateStudentUI(roomData) {
     disableAllInputs();
     submitBtn.classList.add('hidden');
     submitBtn.disabled = true;
+    
+    // 隱藏字數計數器
+    if (wordCountDisplay) wordCountDisplay.classList.add('hidden');
   }
-  
+
   // 輔助函數：禁用所有輸入
   function disableAllInputs() {
     const inputs = container.querySelectorAll('textarea, select, button');
@@ -2491,7 +2607,7 @@ function updateStudentUI(roomData) {
       }
     });
   }
-  
+
   // 輔助函數：如果未提交則啟用輸入
   function enableInputsIfNotSubmitted() {
     // 檢查學生是否已針對當前問題提交
@@ -2505,7 +2621,9 @@ function updateStudentUI(roomData) {
       hasSubmitted = true;
       submissionStatus.classList.remove('hidden');
       // 顯示下載按鈕
-      document.getElementById('downloadMyAnswerBtn').classList.remove('hidden');
+      if (document.getElementById('downloadMyAnswerBtn')) {
+        document.getElementById('downloadMyAnswerBtn').classList.remove('hidden');
+      }
       // 如果是超時提交，添加相應樣式
       if (participant.late) {
         answerInputArea.classList.add('late');
@@ -2522,13 +2640,19 @@ function updateStudentUI(roomData) {
       submissionStatus.classList.add('hidden');
       answerInputArea.classList.remove('submitted', 'late');
       // 隱藏下載按鈕
-      document.getElementById('downloadMyAnswerBtn').classList.add('hidden');
+      if (document.getElementById('downloadMyAnswerBtn')) {
+        document.getElementById('downloadMyAnswerBtn').classList.add('hidden');
+      }
       // 啟用輸入
       const inputs = container.querySelectorAll('textarea, select, button');
       inputs.forEach(el => {
         el.disabled = false;
         if (el.tagName === 'TEXTAREA') {
-          el.placeholder = '請在此輸入您的回答...';
+          if (currentMode === 'extended') {
+            el.placeholder = '請在此輸入您的回答 (最多180字)...';
+          } else {
+            el.placeholder = '請在此輸入您的回答...';
+          }
         }
       });
       // 顯示提交按鈕
@@ -3079,7 +3203,6 @@ async function startSession() {
       return;
     }
   }
-  
   // 清除現有計時器
   if (timer) {
     clearInterval(timer);
@@ -3089,7 +3212,6 @@ async function startSession() {
     clearInterval(hostTimer);
     hostTimer = null;
   }
-  
   // 【關鍵修訂】檢查 Firebase 連線狀態
   let firebaseConnected = true;
   try {
@@ -3098,19 +3220,16 @@ async function startSession() {
     console.warn('Firebase 連線異常，將使用本地計時器', error);
     firebaseConnected = false;
   }
-  
   if (!firebaseConnected) {
     // 使用純本地模式
     alert('無法連接 Firebase 服務，將使用本地計時器。學生端可能無法同步看到問題和計時。');
     useLocalSession();
     return;
   }
-  
   // 原有的 Firebase 寫入邏輯
   const sessionRef = database.ref('class_rooms/' + currentRoom + '/session');
   const sessionSnapshot = await sessionRef.once('value').catch(() => null);
   const currentSession = sessionSnapshot ? sessionSnapshot.val() : null;
-  
   if (currentSession && currentSession.active) {
     // 暫停會話
     await sessionRef.update({
@@ -3128,9 +3247,11 @@ async function startSession() {
     const newQuestionId = Date.now();
     currentQuestionId = newQuestionId;
     const mode = document.querySelector('input[name="questionMode"]:checked').value;
-    const outlineType = document.querySelector('input[name="outlineType"]:checked').value;
-    const outlineConfig = { type: outlineType };
-    
+    let outlineConfig = null;
+    if (mode === 'outline') {
+      const outlineType = document.querySelector('input[name="outlineType"]:checked').value;
+      outlineConfig = { type: outlineType };
+    }
     try {
       // 先更新 session
       const sessionUpdate = {
@@ -3144,17 +3265,13 @@ async function startSession() {
         outlineConfig: outlineConfig,
         sharingScreen: false
       };
-      
       await database.ref('class_rooms/' + currentRoom + '/session').update(sessionUpdate);
-      
       // 重置答案
       await database.ref('class_rooms/' + currentRoom + '/answers').set({});
-      
       // 重置所有參與者狀態
       const participantsRef = database.ref('class_rooms/' + currentRoom + '/participants');
       const participantsSnapshot = await participantsRef.once('value').catch(() => null);
       const participants = participantsSnapshot ? participantsSnapshot.val() : null;
-      
       if (participants) {
         const updatePromises = [];
         for (const name in participants) {
@@ -3170,15 +3287,12 @@ async function startSession() {
         }
         await Promise.all(updatePromises);
       }
-      
       sessionActive = true;
       remainingTime = timeLimit;
       document.getElementById('shareScreenBtn').classList.remove('hidden');
       updateCountdownDisplay(remainingTime);
-      
       // 【關鍵】重新設計主持人計時器
       startHostTimer();
-      
     } catch (error) {
       console.error('Firebase 寫入失敗，切換到本地模式', error);
       useLocalSession();
@@ -3257,17 +3371,16 @@ async function clearSession() {
  
 async function submitAnswer() {
   if (!currentRoom || !currentUser || isHost || hasSubmitted) return;
- 
   let answerText = '';
   const container = document.getElementById('studentInputContainer');
   const table = container.querySelector('table');
- 
+  const studentAnswer = document.getElementById('studentAnswer');
+  
   if (table) {
     // Format Table Inputs into HTML string
     const clonedTable = table.cloneNode(true);
     const textareas = table.querySelectorAll('textarea');
     const clonedCells = clonedTable.querySelectorAll('textarea');
-   
     // Convert textarea values to text/html inside cell
     for (let i = 0; i < textareas.length; i++) {
         const val = textareas[i].value || '';
@@ -3275,24 +3388,37 @@ async function submitAnswer() {
         // Replace textarea with div or simple text
         parent.innerHTML = val.replace(/\n/g, '<br>');
     }
-   
     // Add styles to ensure it looks good on host side
     clonedTable.classList.add('rendered-outline-table');
     answerText = clonedTable.outerHTML;
-  } else {
-    answerText = document.getElementById('studentAnswer').value.trim();
+  } else if (studentAnswer) {
+    answerText = studentAnswer.value.trim();
   }
-  // Standard checks on content existence (simple check)
-  if (table) {
+
+  // 檢查拓展模式的字數限制
+  const roomSnapshot = await database.ref('class_rooms/' + currentRoom).once('value');
+  const roomData = roomSnapshot.val();
+  const currentMode = roomData.session?.mode || 'qa';
+  
+  if (currentMode === 'extended') {
+    if (answerText.length > 180) {
+      alert('字數超過限制，最多只能輸入180字');
+      return;
+    }
+    if (answerText.length === 0) {
+      alert('請輸入回答內容');
+      return;
+    }
+  } else if (table) {
      let hasContent = false;
      container.querySelectorAll('textarea').forEach(t => { if(t.value.trim()) hasContent = true; });
-     if(!hasContent) { alert('請填寫大綱內容'); return; }
-  } else {
-     if(!answerText) { alert('請輸入答案'); return; }
+     if(!hasContent) { alert('請填寫內容'); return; }
+  } else if (!answerText) {
+     alert('請輸入答案');
+     return;
   }
+
   try {
-    const roomSnapshot = await database.ref('class_rooms/' + currentRoom).once('value');
-    const roomData = roomSnapshot.val();
     let isLate = false;
     if (roomData.session.active && roomData.session.startTime) {
       const startTime = roomData.session.startTime;
@@ -3300,33 +3426,35 @@ async function submitAnswer() {
       const elapsed = Math.floor((currentTime - startTime) / 1000);
       isLate = elapsed > roomData.session.timeLimit;
     }
+    
     if (remainingTime <= 0) {
       alert('時間已到,無法提交答案');
       return;
     }
+    
     const answerData = {
       text: answerText,
       timestamp: firebase.database.ServerValue.TIMESTAMP,
       late: isLate
     };
+    
     await database.ref('class_rooms/' + currentRoom + '/answers/' + currentUser).set(answerData);
     await database.ref('class_rooms/' + currentRoom + '/participants/' + currentUser).update({
       submitted: true,
       late: isLate,
       lastQuestionId: roomData.session.questionId
     });
+    
     hasSubmitted = true;
     const submissionStatus = document.getElementById('submissionStatus');
     const answerInputArea = document.getElementById('answerInputArea');
     submissionStatus.classList.remove('hidden');
-   
     // Disable inputs
     if(table) {
        container.querySelectorAll('textarea').forEach(t => t.disabled = true);
-    } else {
-       document.getElementById('studentAnswer').disabled = true;
+    } else if (studentAnswer) {
+       studentAnswer.disabled = true;
     }
-   
     document.getElementById('submitBtn').classList.add('hidden');
     answerInputArea.classList.add('submitted');
     // 顯示下載按鈕
